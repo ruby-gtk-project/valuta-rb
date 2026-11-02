@@ -3,7 +3,9 @@
 Upstream: `origin/main` (Python + PyGObject + blueprint, GTK4/Libadwaita).
 Port: `ruby` branch, `lib/`.
 
-Surveyed with the `component-identification` skill. Every `.blp` was read as the
+Surveyed with the `component-identification` skill, and re-surveyed after the
+port landed (presence columns reflect `lib/` as of the latest commit on
+`ruby`). Every `.blp` was read as the
 authority for the widget tree, CSS classes and signals; every `.py` was read for
 what the blueprint cannot show (runtime widgets, dynamic classes, actions,
 repeaters). `scripts/component-scan.sh` was run over a `git archive` of
@@ -15,28 +17,55 @@ widget total upstream is ~40 rows across 6 declarative/source unit pairs.
 
 ## State of the port
 
-`lib/` on `ruby` contains only the gem skeleton:
+Re-surveyed after the port landed. `lib/` on `ruby` now carries 18 files,
+~3,260 lines, and **every window, page, dialog, row, menu, action, stack state
+and stylesheet class below is ported**:
 
-| Path | What it is |
-|---|---|
-| `lib/valuta.rb` | `require_relative "valuta/application"` |
-| `lib/valuta/application.rb` | the kettle-jem stub — `Gtk::Application`, `Adwaita::ApplicationWindow`, one `Adwaita::StatusPage` reading "The Ruby port has not been written yet." |
-| `lib/valuta/rb/version.rb` | version constant |
+| Path | Lines | Upstream it came from |
+|---|---:|---|
+| `lib/main.rb` | 15 | `src/main.py` |
+| `lib/application.rb` | 128 | `src/application.py` |
+| `lib/actions.rb` | 47 | `src/actions.py` |
+| `lib/window.rb` | 180 | `src/window.py` + `src/window.blp` (incl. `primary_menu`) |
+| `lib/convertion_page.rb` | 370 | `src/pages/convertion/{convertion.py,index.blp}` |
+| `lib/currency_selector.rb` | 259 | `src/components/currency_selector/*` |
+| `lib/currency_selector_row.rb` | 91 | `src/components/currency_selector_row/*` |
+| `lib/shortcuts.rb` | 62 | `src/components/shortcuts/*` |
+| `lib/about_dialog.rb` | 91 | `src/about.py` |
+| `lib/convertion.rb` | 137 | `Convertion` in `src/utils.py` |
+| `lib/currencies_list_model.rb` | 75 | `CurrenciesListModel` in `src/utils.py` |
+| `lib/currency_object.rb` | 42 | `CurrencyObject` in `src/utils.py` |
+| `lib/utils.rb` | 173 | `Utils` in `src/utils.py` |
+| `lib/settings.rb` | 162 | the gschema + `Settings` in `src/utils.py` |
+| `lib/requests.rb` | 166 | `src/requests.py` |
+| `lib/define.rb` | 1146 | `src/define.in` (all 160 currencies) |
+| `lib/style.rb` | 100 | `src/assets/style.css` |
+| `lib/valuta.rb` | 3 | gem entry — now `require_relative "main"` |
 
-**No user-facing component is ported.** Everything below is missing.
+**Two gaps remain, both listed in full below:**
+
+1. `src/search_provider/search_provider.in` → `lib/shell_search_provider.rb`
+   — the GNOME Shell search provider. Not ported. This is the only missing
+   user-facing component.
+2. `po/` — no catalogue on `ruby`; all 34 locales and the 160 translated
+   currency names are still English literals in `lib/*.rb`.
+
+Also absent (not components, but parity work): no specs beyond
+`spec/spec_helper.rb`, so nothing below is covered by a test.
 
 ## House shape for the targets
 
 Following the pilot at `gnome-contacts-rb`: the port proper lives in flat
-`lib/<thing>.rb` files with top-level classes, `lib/main.rb` is the entry unit,
-and the gem stub `lib/valuta/application.rb` stays as packaging plumbing.
-One upstream `.py` + its sibling `.blp` collapse into one `lib/*.rb`.
+`lib/<thing>.rb` files with top-level classes and `lib/main.rb` is the entry
+unit, which `lib/valuta.rb` requires. One upstream `.py` + its sibling `.blp`
+collapse into one `lib/*.rb`. Only `lib/valuta/rb/version.rb` is left of the
+kettle-jem skeleton.
 
 ---
 
 ## src/application.py — the application singleton → `lib/application.rb`
 
-Kind: **application**. Present: **no**.
+Kind: **application**. Present: **yes** — `lib/application.rb`.
 
 `Adw.Application` subclass with `HANDLES_COMMAND_LINE`, `resource_base_path`
 `/io/github/idevecore/Valuta` (this is what auto-loads `style.css` — nothing
@@ -55,11 +84,11 @@ itself. Works by accident in PyGObject; do not reproduce.
 
 ## src/main.py — launcher → `lib/main.rb`
 
-Kind: **entry point**. Present: **no**. One line: `Application().run(sys.argv)`.
+Kind: **entry point**. Present: **yes** — `lib/main.rb`. One line upstream: `Application().run(sys.argv)`.
 
 ## src/actions.py — application actions and accelerators → `lib/actions.rb`
 
-Kind: **actions**. Present: **no**.
+Kind: **actions**. Present: **yes** — `lib/actions.rb`.
 
 | Action | Accel | Does |
 |---|---|---|
@@ -75,7 +104,7 @@ either reproduces the bug or fixes it and says so.
 
 ## src/window.py + src/window.blp — the main window → `lib/window.rb`
 
-Kind: **window**. Present: **no** (the stub window is not this).
+Kind: **window**. Present: **yes** — `lib/window.rb`.
 
 `Adw.ApplicationWindow window`, `width-request: 350`, `height-request: 300`,
 `default-width: 420`, `default-height: 600`, title `_("Valuta")`.
@@ -104,7 +133,7 @@ Behaviour, none of it in the blueprint:
 
 ### `menu primary_menu` (inside src/window.blp) → folded into `lib/window.rb`
 
-Kind: **menu model**. Present: **no**.
+Kind: **menu model**. Present: **yes** — folded into `lib/window.rb` as `primary_menu`, with the nested `window.providers::ecb` radio section.
 
 | Section | Item | Action | Target |
 |---|---|---|---|
@@ -117,7 +146,7 @@ second provider drops in.
 
 ## src/pages/convertion/convertion.py + index.blp — the conversion page → `lib/convertion_page.rb`
 
-Kind: **page**. Present: **no**. This is the whole app's UI.
+Kind: **page**. Present: **yes** — `lib/convertion_page.rb`. This is the whole app's UI.
 
 | Widget | × | CSS | Signals / actions | Notes |
 |---|---:|---|---|---|
@@ -162,7 +191,7 @@ Behaviour to reproduce:
 
 ## src/components/currency_selector/{currency_selector.py,index.blp} — the currency dropdown → `lib/currency_selector.rb`
 
-Kind: **widget (composite)**. Present: **no**. Used twice per page.
+Kind: **widget (composite)**. Present: **yes** — `lib/currency_selector.rb`. Used twice per page.
 
 `template $CurrencySelector : Adw.Bin`, with a `selected` string GObject
 property and its own `user-selection-changed` signal.
@@ -193,7 +222,7 @@ emitted/defined but nothing connects to them.
 
 ## src/components/currency_selector_row/{currency_selector_row.py,index.blp} — one currency row → `lib/currency_selector_row.rb`
 
-Kind: **row**. Present: **no**. One per currency in an open popover.
+Kind: **row**. Present: **yes** — `lib/currency_selector_row.rb`. One per currency in an open popover.
 
 | Widget | × | CSS | Signals | Notes |
 |---|---:|---|---|---|
@@ -207,7 +236,7 @@ dropped.
 
 ## src/components/shortcuts/{shortcuts.py,shortcuts.blp} — keyboard shortcuts → `lib/shortcuts.rb`
 
-Kind: **window (help overlay)**. Present: **no**.
+Kind: **window (help overlay)**. Present: **yes** — `lib/shortcuts.rb`, as an `Adwaita::ShortcutsDialog` (see the decision below).
 
 `Gtk.ShortcutsWindow`, `modal: true`, one `ShortcutsSection`
 (`section-name: "shortcuts"`, `max-height: 10`) with one `ShortcutsGroup`
@@ -225,7 +254,7 @@ shown must still be the ones `lib/actions.rb` actually binds.
 
 ## src/about.py — the About dialog → `lib/about_dialog.rb`
 
-Kind: **dialog**. Present: **no**.
+Kind: **dialog**. Present: **yes** — `lib/about_dialog.rb`.
 
 `Adw.AboutDialog`: application name `_("Valuta")`, icon = app id, developer
 name `Ideve Core`, developers `["Ideve Core"]`, designers
@@ -239,7 +268,7 @@ the Ruby bindings and `Gtk::Version` instead (`Gtk::VERSION` does not exist).
 
 ## src/utils.py — model and conversion layer → `lib/currency_object.rb`, `lib/currencies_list_model.rb`, `lib/convertion.rb`, `lib/settings.rb`, `lib/utils.rb`
 
-Kind: **model / support** (no widgets). Present: **no**.
+Kind: **model / support** (no widgets). Present: **yes** — all five targets exist.
 
 | Upstream class | Target | What it is |
 |---|---|---|
@@ -250,7 +279,7 @@ Kind: **model / support** (no widgets). Present: **no**.
 
 ## src/requests.py — the provider HTTP layer → `lib/requests.rb`
 
-Kind: **network**. Present: **no**.
+Kind: **network**. Present: **yes** — `lib/requests.rb` (`net/http` in place of `Soup.Session`).
 
 `Providers` base + `ECB` subclass against
 `https://api.frankfurter.app/latest?amount=&from=&to=`, a `Soup.Session`
@@ -261,7 +290,7 @@ The response dict is the contract the page and the window both read:
 
 ## src/define.in — currency table and build-time defines → `lib/define.rb`
 
-Kind: **data**. Present: **no**.
+Kind: **data**. Present: **yes** — `lib/define.rb`, all 160 entries.
 
 **160 currency entries**, each with a translated `name`, a `flag` emoji, a
 `providers` string (`"0,1,2"` — ECB is `0`), a `symbol` and an `about`
@@ -271,7 +300,7 @@ names are the bulk of the translatable strings.
 
 ## data/io.github.idevecore.Valuta.gschema.xml.in — GSettings schema → `lib/settings.rb`
 
-Kind: **settings schema**. Present: **no**.
+Kind: **settings schema**. Present: **yes** — `lib/settings.rb` holds the seven keys with a JSON-file store in place of GSettings (no schema to install).
 
 | Key | Type | Default |
 |---|---|---|
@@ -287,7 +316,7 @@ No `high-precision` key despite the page subscribing to it.
 
 ## src/assets/style.css — the stylesheet → `lib/style.rb`
 
-Kind: **stylesheet**. Present: **no**.
+Kind: **stylesheet**. Present: **yes** — `lib/style.rb`, loaded through an explicit `Gtk::CssProvider`.
 
 Redefines `accent_color`/`accent_bg_color` to the Adwaita greens, restyles
 `selection`, and defines `.pd`, `.rounded`, `.text-light`, `.f-l`,
@@ -302,7 +331,7 @@ the `LinkButton` through GTK's own `link` class). Loaded implicitly by
 
 ## src/search_provider/search_provider.in — GNOME Shell search provider → `lib/shell_search_provider.rb`
 
-Kind: **service (D-Bus)**. Present: **no**.
+Kind: **service (D-Bus)**. Present: **NO — the one remaining user-facing gap.**
 
 A `Gio.Application` with `IS_SERVICE` and a 10s inactivity timeout exporting
 `org.gnome.Shell.SearchProvider2`: `GetInitialResultSet`,
@@ -321,7 +350,7 @@ targets `data/` in the port.
 
 ## src/assets/icons/*.svg — bundled icons → `data/icons/`
 
-Kind: **assets**. Present: **no**.
+Kind: **assets**. Present: **yes** — `data/icons/hicolor/`, all eight symbolics plus the app icons and an `index.theme`.
 
 Eight symbolic icons ship in the GResource. **Used:**
 `vertical-arrows-symbolic` (switch button), `refresh-large-symbolic` (reload
@@ -339,7 +368,7 @@ above.
 
 ## po/ — translation catalogue → `po/` + a gettext bootstrap
 
-Kind: **i18n**. Present: **no**.
+Kind: **i18n**. Present: **no** — no `po/` on `ruby` yet; every string is an English literal in `lib/*.rb`.
 
 34 locales in `LINGUAS`, a `.pot`, and 17 entries in `POTFILES`. Translatable
 strings live in the five `.blp` files, the five `.py` files, `define.in` (the
@@ -354,42 +383,66 @@ strings live in the five `.blp` files, the five `.py` files, `define.in` (the
 
 | | Upstream | `ruby` branch |
 |---|---:|---:|
-| Declarative units (`.blp`) | 5 | 0 (none by design) |
-| Widget rows | ~40 | 4 (the stub) |
-| Distinct widget types | 20 | 4 |
-| Distinct CSS classes applied | 14 | 0 |
-| Distinct signals | ~16 | 1 (`activate`) |
-| Actions | 5 (`app.quit`, `app.about`, `app.switch-currencies`, `win.show-help-overlay`, `window.providers`) | 0 |
-| Currency entries | 160 | 0 |
+| Declarative units (`.blp`) | 5 | 0 (none by design — built in code) |
+| Component units | 13 | 12 (search provider missing) |
+| Widget rows | ~40 | ~40 |
+| Distinct widget types | 20 | 20 |
+| Distinct CSS classes applied | 14 | 14 |
+| Distinct signals | ~16 | ~16 |
+| Actions | 5 (`app.quit`, `app.about`, `app.switch-currencies`, `win.show-help-overlay`, `window.providers`) | 5 |
+| Stack states (`result`/`loading`/`convertion-error`) | 3 | 3 |
+| Currency entries | 160 | 160 |
+| Icons shipped | 8 symbolic + 3 app | 8 symbolic + 3 app |
 | Locales | 34 | 0 |
 
-## Blockers and decisions to settle before writing code
+## Decisions settled while porting
 
-1. **Locale-aware number formatting.** Upstream leans on Python `babel`
-   (`format_number`, `parse_decimal`) for both the From entry's parsing and the
-   result's formatting, and the `error` CSS class on the entry depends on it.
-   Ruby has no drop-in babel. Options: `GLib`/`ICU` via the bindings, the
-   `twitter_cldr` gem, or a hand-rolled formatter driven by the locale
-   separators. Pick one before `lib/utils.rb`.
-2. **`Gtk::ShortcutsWindow` is deprecated** in the GTK the fork builds against.
-   The pilot ports the equivalent to `Adwaita::ShortcutsDialog`. Decide and
-   record, because `window.set_help_overlay` only accepts the old type.
-3. **`Convertion`'s event bus is not GObject signals.** Upstream hand-rolls
-   `connect`/`__event`. In Ruby either keep a plain observer list or make it a
-   real `GObject` — but the window and the page both subscribe to `converted`,
-   so the choice shows up in two files.
-4. **Threading.** The conversion runs in a `Gio.Task` worker thread and touches
-   widgets from `converted`. The Ruby bindings need the UI work marshalled back
-   to the main loop (`GLib::Idle.add`) — do not call widget setters from the
-   worker.
-5. **The GSettings schema has to be installed** for `Gio::Settings.new(app_id)`
-   to work at all; the dev shell needs a compiled schema dir on
-   `GSETTINGS_SCHEMA_DIR`, or the port needs a fallback store.
-6. **Three upstream bugs**, each needing a conscious port-or-fix call:
-   `<primary>q` lost to a duplicated `set_accels_for_action`; the popover's
-   `curency-selector` typo killing the stylesheet rules; and the page
-   subscribing to a `high-precision` key that does not exist.
-7. **Search provider is out of scope for a first pass** but is genuinely
-   user-facing (it is how most people hit this app). Schedule it after the
-   window and page land, and note it needs D-Bus on the session bus, which the
-   `xvfb-run` harness does not give for free.
+Recorded here because each one shows up in more than one file and the parity
+steps need to know which way it went.
+
+1. **Locale-aware number formatting** — upstream leans on Babel
+   (`format_number` / `parse_decimal`), which ships CLDR. No CLDR in Ruby's
+   stdlib, so `lib/utils.rb` carries its own per-language `SEPARATORS` table
+   (defaulting to the `en` convention, as Babel does for the C locale), with
+   `format_number` / `parse_number` built on it. The language is the first of
+   `GLib.language_names`, stripped of territory and codeset. The `error` CSS
+   class on the From entry hangs off `parse_number` returning false.
+2. **`Gtk::ShortcutsWindow` is unusable from these bindings** —
+   `Gtk::ShortcutsWindow.new` raises "GtkWindow is not subtype of
+   GtkShortcutsWindow". `lib/shortcuts.rb` is an `Adwaita::ShortcutsDialog`,
+   and because `Gtk::Window#set_help_overlay` only takes the old type,
+   `lib/window.rb` installs its own `win.show-help-overlay` `Gio::SimpleAction`
+   in a `window` action group rather than getting it for free.
+3. **`Convertion`'s event bus** — kept as a plain observer list in
+   `lib/convertion.rb`, matching upstream's hand-rolled `connect` / `__event`
+   rather than becoming a real GObject. Both `lib/window.rb` and
+   `lib/convertion_page.rb` subscribe to `converted`.
+4. **Threading** — the conversion runs in a plain `Thread`
+   (`lib/convertion_page.rb:311`) and every widget touch from `converted` is
+   marshalled back through `GLib::Idle.add` (`convertion_page.rb:365`,
+   `window.rb:175`). No widget setter is called off the main loop.
+5. **GSettings** — not used. Installing a compiled schema into the dev shell
+   was avoided; `lib/settings.rb` holds the same seven keys and defaults over a
+   JSON file store, exposing `get_string` / `create_action` /
+   `changed::<key>`-style subscriptions so the call sites read like upstream's.
+6. **The three upstream bugs, as ported:**
+   - `<primary>q` lost to a duplicated `set_accels_for_action` → **fixed.**
+     `Actions::ACCELERATORS` binds `app.quit` to both `<primary>q` and
+     `<primary>w` in one call, so the shortcuts window's Quit entry is honest.
+   - the popover's `curency-selector` typo killing every
+     `.currency-selector *` rule → **fixed.** `lib/currency_selector.rb:166`
+     adds the correctly spelled class, so `lib/style.rb`'s list/row/separator
+     rules are live in the port where they are dead upstream.
+   - the page subscribing to a non-existent `high-precision` key → **dropped.**
+     No reference to it anywhere in `lib/`.
+
+## Remaining work
+
+1. **The GNOME Shell search provider** (`lib/shell_search_provider.rb`) is the
+   one missing user-facing component. It needs `org.gnome.Shell.SearchProvider2`
+   on the session bus, which the `xvfb-run` harness does not give for free, plus
+   the `.ini` and `.service.in` packaging files under `data/`.
+2. **`po/`** — 34 locales, a `.pot`, and the 160 translated currency names.
+   Nothing on `ruby` yet; see the `translation-parity` skill before starting.
+3. **Specs** — `spec/` holds only `spec_helper.rb`. Nothing above is covered;
+   see the `ruby-gtk-testing` and `test-parity` skills.
