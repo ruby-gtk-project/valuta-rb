@@ -2,7 +2,7 @@
 
 require 'json'
 require 'fileutils'
-require 'gtk4'
+require 'gio2'
 
 # Settings holds the same keys as upstream's io.github.idevecore.Valuta
 # GSettings schema.
@@ -14,6 +14,10 @@ require 'gtk4'
 # checkout is worse than the alternative, so the same keys, defaults,
 # enumerations and change notifications are backed by a small JSON file under
 # XDG_CONFIG_HOME instead.
+#
+# Gio alone is required, not gtk4: the shell search provider loads this class
+# in a process that D-Bus activates, which may have no display, and requiring
+# the gtk4 gem calls Gtk.init at load time.
 #
 class Settings
   # The schema's <enum id="…Window"> — one nick per provider index, so

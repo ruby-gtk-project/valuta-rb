@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'adwaita'
+require 'gio2'
 
 require_relative 'define'
 require_relative 'settings'
@@ -17,6 +17,10 @@ require_relative 'convertion'
 # for the languages upstream is translated into are tabulated here and the
 # grouping follows Babel's default decimal pattern, "#,##0.###": groups of
 # three digits and at most three fraction digits, trailing zeros dropped.
+#
+# Gio alone is required, not Adwaita: no widget is built here, and the shell
+# search provider loads this class in a process that may have no display to
+# initialise GTK against.
 #
 class Utils
   FRACTION_DIGITS = 3

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Valuta
+GenericName=Valuta
+TryExec=valuta
+Exec=valuta
+Comment=Convert between currencies
+Icon=io.github.idevecore.Valuta
+Terminal=false
+Type=Application
+Keywords=Valuta;Converter;Currency;ExchangeRate;
+Categories=Utility;GTK;GNOME;
+StartupNotify=true
+X-Purism-FormFactor=Workstation;Mobile;
+X-GNOME-SingleWindow=true

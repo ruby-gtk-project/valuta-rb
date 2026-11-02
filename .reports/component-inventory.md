@@ -40,15 +40,20 @@ and stylesheet class below is ported**:
 | `lib/requests.rb` | 166 | `src/requests.py` |
 | `lib/define.rb` | 1146 | `src/define.in` (all 160 currencies) |
 | `lib/style.rb` | 100 | `src/assets/style.css` |
-| `lib/valuta.rb` | 3 | gem entry — now `require_relative "main"` |
+| `lib/shell_search_provider.rb` | 431 | `src/search_provider/search_provider.in` |
+| `lib/valuta.rb` | 4 | gem entry — the window and the search provider |
 
-**Two gaps remain, both listed in full below:**
+**One gap remains, listed in full below:**
 
-1. `src/search_provider/search_provider.in` → `lib/shell_search_provider.rb`
-   — the GNOME Shell search provider. Not ported. This is the only missing
-   user-facing component.
-2. `po/` — no catalogue on `ruby`; all 34 locales and the 160 translated
+1. `po/` — no catalogue on `ruby`; all 34 locales and the 160 translated
    currency names are still English literals in `lib/*.rb`.
+
+The search provider landed with its registration files —
+`data/gnome-shell/search-providers/io.github.idevecore.Valuta.SearchProvider.ini`,
+`data/dbus-1/services/io.github.idevecore.Valuta.SearchProvider.service` and the
+`data/applications/io.github.idevecore.Valuta.desktop` the ini names — plus the
+`exe/valuta-search-provider` the service activates and
+`test/drive_search_provider.rb`, which drives it over a session bus of its own.
 
 Also absent (not components, but parity work): no specs beyond
 `spec/spec_helper.rb`, so nothing below is covered by a test.
@@ -331,7 +336,7 @@ the `LinkButton` through GTK's own `link` class). Loaded implicitly by
 
 ## src/search_provider/search_provider.in — GNOME Shell search provider → `lib/shell_search_provider.rb`
 
-Kind: **service (D-Bus)**. Present: **NO — the one remaining user-facing gap.**
+Kind: **service (D-Bus)**. Present: **yes** — `lib/shell_search_provider.rb`.
 
 A `Gio.Application` with `IS_SERVICE` and a 10s inactivity timeout exporting
 `org.gnome.Shell.SearchProvider2`: `GetInitialResultSet`,
