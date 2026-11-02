@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "valuta"
+require_relative "../lib/main"
 
-Valuta::Application.new.build.run
+Main.run(ARGV)
