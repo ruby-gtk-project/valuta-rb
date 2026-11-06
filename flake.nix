@@ -25,6 +25,7 @@
           libadwaita
           harfbuzz
           librsvg
+          libsoup_3
         ]
         # The Ruby `pkg-config` gem resolves `Requires.private` transitively and
         # hard-fails if any .pc in the chain is missing, so gtk4's whole private
@@ -95,6 +96,11 @@
         typelibPath = pkgs.lib.makeSearchPath "lib/girepository-1.0"
           (map (drv: drv.out or drv) (gtkStack ++ [ pkgs.at-spi2-core ]));
 
+        # Soup's HTTPS requests go through a GIO TLS backend, which GIO loads
+        # as a module rather than discovering through the typelib path above;
+        # without this, Soup::Session raises "TLS support is not available".
+        gioModulePath = "${pkgs.glib-networking}/lib/gio/modules";
+
         # nix/ and not the repo root: the root Gemfile is kettle-jem's
         # development bundle — rubocop, rspec, yard, the kettle-dev stack — and
         # must not end up in a packaged app's runtime closure. nix/Gemfile holds
@@ -129,7 +135,7 @@
           # the wrapper never looks. The wrapper below is built by hand and
           # points at both the pre- and post-move paths.
           nativeBuildInputs = [ pkgs.makeWrapper ];
-          buildInputs = [ gems ] ++ gtkStack;
+          buildInputs = [ gems pkgs.glib-networking ] ++ gtkStack;
 
           dontBuild = true;
 
@@ -160,6 +166,7 @@
               --add-flags "-I$out/share/valuta/lib" \
               --add-flags "$out/share/valuta/exe/${launcher}" \
               --set GI_TYPELIB_PATH "${typelibPath}" \
+              --set GIO_EXTRA_MODULES "${gioModulePath}" \
               --prefix XDG_DATA_DIRS : "$out/share" \
               --prefix XDG_DATA_DIRS : "$out/share/gsettings-schemas/valuta-0.1.0" \
               --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}" \
@@ -183,6 +190,7 @@
 
           packages = [
             gems
+            pkgs.glib-networking
             gems.wrappedRuby
             pkgs.bundler
             pkgs.bundix
@@ -208,6 +216,7 @@
           shellHook = ''
             export XDG_DATA_DIRS="${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk4}/share/gsettings-schemas/${pkgs.gtk4.name}:${pkgs.adwaita-icon-theme}/share:$XDG_DATA_DIRS"
             export GI_TYPELIB_PATH="${typelibPath}''${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+            export GIO_EXTRA_MODULES="${gioModulePath}''${GIO_EXTRA_MODULES:+:$GIO_EXTRA_MODULES}"
             export RUBYLIB="$PWD/lib''${RUBYLIB:+:$RUBYLIB}"
             [ -d data/schemas ] && export GSETTINGS_SCHEMA_DIR="$PWD/data/schemas"
             unset BUNDLE_GEMFILE BUNDLE_FROZEN

@@ -1,31 +1,27 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'net/http'
+require 'soup3'
 require 'time'
-require 'uri'
 
 require_relative 'define'
 
 # Requests is the network layer: it asks a provider for a rate and hands back
 # the provider's serialized response.
 #
-# Ported from upstream's src/requests.py. Upstream talks to the one provider it
-# ships, the European Central Bank's rates as republished by
-# api.frankfurter.app, over libsoup; this port uses net/http, since the soup3
-# bindings are not part of the ruby-gnome stack the fork builds against. The
-# response shape, the URL and the error contract are upstream's: #get answers
-# the response Hash on success and the error message String on failure, which
-# is exactly the String-or-Hash the conversion cache branches on.
+# Ported from upstream's src/requests.py. Upstream talks to the one provider
+# it ships, the European Central Bank's rates as republished by
+# api.frankfurter.app, over libsoup, via `Soup.Session`/`Soup.Message`; this
+# port uses the `soup3` gem's own `Soup::Session`/`Soup::Message`, which are
+# the same libsoup 3 types read off its typelib. The response shape, the URL
+# and the error contract are upstream's: #get answers the response Hash on
+# success and the error message String on failure, which is exactly the
+# String-or-Hash the conversion cache branches on.
 #
 class Requests
   HEADERS = {
     'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
   }.freeze
-
-  MAX_REDIRECTS = 5
-  OPEN_TIMEOUT = 10
-  READ_TIMEOUT = 15
 
   # Providers is upstream's abstract provider: it holds the pair being
   # converted and knows how to turn a provider's date into the "January 1,
@@ -100,53 +96,32 @@ class Requests
 
   PROVIDERS = { 0 => ECB }.freeze
 
-  # Session is upstream's SoupSession stand-in: it builds the request with the
-  # headers the provider expects and reads the body.
-  class Session
+  # SoupSession is upstream's own class of the same name: it builds the
+  # `Soup::Message` with the headers the provider expects and reads the body
+  # through `Soup::Session#send_and_read`. libsoup follows redirects itself,
+  # so there is no hop-following to replicate here.
+  class SoupSession
+    def initialize
+      @session = Soup::Session.new
+    end
+
     def create_request(method, url, headers = {})
-      Net::HTTP.const_get(method.to_s.capitalize).new(URI(url)).tap do |request|
-        HEADERS.merge(headers).each { |name, value| request[name] = value }
+      Soup::Message.new(method, url).tap do |message|
+        HEADERS.merge(headers).each do |name, value|
+          message.request_headers.append(name, value)
+        end
       end
     end
 
-    def get_response(url, request) = fetch(url, request, MAX_REDIRECTS)
-
-    private
-
-    # Soup.Session follows redirects on its own, and the provider's host does
-    # redirect, so the same hop-following belongs here.
-      def fetch(url, request, remaining)
-        send_request(url, request).then do |response|
-          if response.is_a?(Net::HTTPRedirection) && remaining.positive?
-            response['location'].then do |location|
-              fetch(location, create_request('GET', location), remaining - 1)
-            end
-          else
-            body_of(response)
-          end
+    def get_response(message)
+      @session.send_and_read(message, nil).to_s.then do |body|
+        unless message.status_code.between?(200, 299)
+          raise IOError, "#{message.status_code} #{message.reason_phrase}"
         end
-      end
 
-      def send_request(url, request)
-        URI(url).then do |uri|
-          Net::HTTP.start(
-            uri.host,
-            uri.port,
-            use_ssl:      uri.scheme == 'https',
-            open_timeout: OPEN_TIMEOUT,
-            read_timeout: READ_TIMEOUT,
-          ) { |http| http.request(request) }
-        end
+        body
       end
-
-      def body_of(response)
-        response.is_a?(Net::HTTPSuccess).then do |ok|
-          unless ok
-            raise IOError, "#{response.code} #{response.message}"
-          end
-        end
-        response.body
-      end
+    end
   end
 
   def initialize(provider, from_currency, to_currency, from_currency_value)
@@ -157,8 +132,8 @@ class Requests
   # Answers the serialized response, or the error's message — the String that
   # tells the caller the conversion did not happen.
   def get
-    Session.new.then do |session|
-      @provider.serializer(session.get_response(@url, session.create_request('GET', @url)))
+    SoupSession.new.then do |session|
+      @provider.serializer(session.get_response(session.create_request('GET', @url, HEADERS)))
     end
   rescue StandardError => error
     error.message

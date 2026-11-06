@@ -96,6 +96,12 @@ Gem::Specification.new do |spec|
   spec.executables = ["valuta", "valuta-search-provider"]
   spec.require_paths = ["lib"]
 
+  # Runtime toolkit
+  spec.add_dependency("glib2")
+  spec.add_dependency("gtk4")
+  spec.add_dependency("adwaita")
+  spec.add_dependency("soup3")
+
   # NOTE: It is preferable to list development dependencies in the gemspec due to increased
   #       visibility and discoverability.
   #       However, development dependencies in gemspec will install on
