@@ -179,3 +179,90 @@ evidence of no gaps**, and this round's two real findings are the proof.
 - `PORTING.md` still does not exist anywhere on `ruby` (re-checked: `find . -iname 'PORTING.md'` returns nothing).
 - `.reports/component-inventory.md:33`'s `n/a`/"by design" language (the GResource row) is unchanged since the prior pass and remains unrewritten in the source document itself — this report rewrites it above, but the underlying file still carries the original phrasing. That is consistent with this skill's own rule (rewrite the finding here, do not silently edit the artifact being audited), restated so it is not mistaken for an oversight.
 - The RSpec scaffold (`spec/spec_helper.rb`, `spec/README.md`, zero `*_spec.rb` files) carries no excuse language — it was simply never populated, and nobody wrote a sentence claiming otherwise. Recorded in `test-parity.md` as a false-green risk, not an excuse, for the same reason as the domain mismatch: there is no sentence to rewrite, only an absence to name.
+
+## Re-audit, 2026-11-07, against `ruby` @ `c8dcd6c`
+
+Re-ran `find-excuses.sh .` fresh. One new hit outside this report's own
+quoted text, in a file this script had not scanned in a materially
+different state before: `.reports/component-inventory.md:39`,
+`"out of scope"`. Rewritten below. (The script's other current hits are
+all this document's own already-rewritten quotes and struck text from the
+prior two passes, re-matched because the pattern-matcher reads the whole
+tree and this report legitimately contains the patterns it's reporting on
+— expected, not new.)
+
+### `.reports/component-inventory.md:38-40` and `:211-215` — a claim that was false *at the moment it was committed*, not merely stale
+
+```
+.reports/component-inventory.md:38  "The one open item is translations (`po/*.po`), which have no `lib/` analogue and are out of scope for `component-identification`"
+.reports/component-inventory.md:212 "the `ruby` branch carries no `po/` directory of its own and no `translation-parity` work has been done yet"
+```
+
+> **I rewrote this entire document on `d6cce63`, more than eighteen hours
+> after `po/` and `gettext` had already landed on this branch (`f9bbc76`)
+> and after this very `.reports/` directory already recorded 184 of 185
+> upstream messages ported — and I still wrote that no `po/` directory
+> exists and no translation work has been done, because I am an idiot who
+> rewrote a summary document from old assumptions instead of checking the
+> tree I was rewriting it against.**
+> Upstream: has a `po/` directory with 33 `.po` files (`po/meson.build:1`,
+> `po/LINGUAS`).
+> Port, actual state at the commit that wrote this claim: `po/` holds 33
+> `.po` files (`ls po/*.po | wc -l` → 33), `lib/i18n.rb` exists and binds
+> `GetText`, and `.reports/translation-parity.md`'s own re-audit section —
+> committed on this branch before `d6cce63` — already states "184/185
+> messages · 33/33 languages shipped." The claim this document makes is not
+> an unassessed gap or a defensible simplification; it is contradicted by
+> two other facts already on the same branch, one of them in the very same
+> `.reports/` directory, at the time it was written.
+
+This is a sharper case than the GResource/"out of scope" rewrite from the
+first pass (which named a real, documented house-style decision badly).
+Here there is no underlying true fact dressed up — the sentence is simply
+wrong, and it was checkable in the time it takes to run `ls po/*.po | wc -l`
+or re-read a sibling file in the same directory the author was editing.
+**A false claim written into a report is worse than an excuse written into
+one**, because an excuse at least names the real state while arguing it's
+fine; this names a state that does not exist. The underlying `lib/` port
+work is not at fault here — translations really were wired, really are
+184/185 — the fault is entirely in a report that describes the port
+incorrectly, in the opposite direction from every other finding in this
+document (those undersold nothing as done; this oversells nothing as
+undone, which is less dangerous to an end user but exactly as dangerous to
+whoever reads `.reports/` to decide what still needs doing: it tells them
+to go redo translation-parity work that is already finished, or worse,
+to distrust the 184/185 number sitting one file over).
+
+### Also confirmed this round
+
+- The gettext-domain mismatch this document's prior pass described as "not
+  the settled-decision failure mode… nobody is claiming the domain mismatch
+  … is intentional" has been **fixed** (`c8dcd6c`), exactly as that pass
+  anticipated it would need to be, with no excuse language attached to the
+  fix (verified: the commit message and the changed files state what
+  changed and why, in the same register as the rest of this skill asks
+  for — no "for now," no "out of scope," no settled-sounding adjective
+  doing unearned work).
+- No `TODO`/`FIXME`/`not implemented`/`in a future` string anywhere in
+  `lib/`, `exe/`, or any `.reports/*.md` beyond what the two prior passes
+  already found and rewrote (re-grepped fresh this round, same result).
+  `PORTING.md` still does not exist anywhere on `ruby`.
+- The RSpec scaffold is still 0 examples; still no excuse language attached
+  to it; still a false-green risk, not a lie, exactly as the first pass
+  found it. Re-ran it this round (see `test-parity.md`) — unchanged.
+
+### The finding worth stating plainly for this round
+
+A clean `find-excuses.sh` run and a green runtime gate (`68/68` this round,
+reproduced independently in this audit) are each, individually, exactly
+what they claim to be and no more: real numbers, not fabricated. **Neither
+one is a parity audit, and neither one would have caught the false claim
+above**, because that claim used none of the excuse vocabulary this skill's
+script greps for — it is a plain, confident, declarative false statement,
+which is a different and in some ways harder-to-catch failure than a
+hedge-word. The only thing that caught it was reading
+`component-inventory.md`'s rewritten text against `translation-parity.md`'s
+own numbers and against the actual `po/` directory, all three on the same
+branch, none of them agreeing with each other until this pass reconciled
+them. That reconciliation — not a grep, not a drive script — is this
+skill's actual job this round.

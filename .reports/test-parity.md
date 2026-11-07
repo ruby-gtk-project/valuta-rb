@@ -109,3 +109,42 @@ runtime-gate framing explicitly: the 68 checks that *do* exist and *do* pass
 are in `test/drive_*.rb`, not in `spec/`, and the gate's "68 checks" number
 should not be conflated with "the RSpec suite passes" — there is no RSpec
 suite yet, only its scaffold.
+
+## Re-audit, 2026-11-07, against `ruby` @ `c8dcd6c`
+
+One commit landed since the prior pass (`c8dcd6c`, the gettext domain fix,
+touching `Rakefile` and `lib/i18n.rb` only — no `lib/*.rb` widget file, no
+`test/` file). Re-ran both drivers myself in this audit, under the same
+`nix develop --command xvfb-run -a ruby test/drive_*.rb` invocation:
+
+```
+50 of 50 checks passed   DRIVE OK   (test/drive_convertion.rb)
+18 of 18 checks passed   DRIVE OK   (test/drive_search_provider.rb)
+```
+
+Combined **68 of 68**, matching this round's runtime gate
+(`drive_ok=true, 68 checks, 0 failed, 20 components`) exactly, and
+unchanged from the previous pass — expected, since the one commit in scope
+did not touch any driven code path. Re-ran the RSpec command too:
+
+```
+No examples found.
+0 examples, 0 failures
+```
+
+**Unchanged: still 0 examples.** The false-green risk named above stands
+exactly as described; nothing in this round's single commit closed it.
+
+**The gate's "20 components" figure is not independently reconciled by this
+report.** Counting `##`-level units in `.reports/component-inventory.md`
+gives roughly 11 named sections (several of which, like "Settings /
+Convertion / Requests / ...", bundle multiple `lib/*.rb` files under one
+heading), not a clean 20. `find lib -name '*.rb' | wc -l` gives **22** files
+on this branch (including the gem-scaffold `lib/valuta.rb`,
+`lib/valuta/rb.rb`, and `lib/valuta/rb/version.rb`, none of which are
+user-facing components). Nobody in this audit traced the gate's own
+component-counting method against either the 22-file count, the ~11-section
+inventory, or any other grouping that lands on exactly 20. Flagged as an
+open, unreconciled question, not resolved as a match — a count that happens
+to be plausible under some reading is not the same as a count this audit
+traced end to end.

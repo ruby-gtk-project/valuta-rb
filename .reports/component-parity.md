@@ -154,3 +154,26 @@ the prior pass — `lib/currency_selector_row.rb`, the full
 term-parsing branches, all listed as not independently re-verified on the
 CSS/signal axes — remain open; this re-audit did not have scope to redo that
 work and is not claiming to.
+
+## Re-audit, 2026-11-07, against `ruby` @ `c8dcd6c`
+
+Only one commit landed since the prior pass (`c8dcd6c`), scoped to
+`Rakefile` and `lib/i18n.rb`. **The domain-mismatch item listed above is
+closed**: `lib/i18n.rb:22` is now `DOMAIN = 'valuta'`, matching upstream
+(full trace in `translation-parity.md`'s re-audit). This was a text/
+mechanism-axis divergence, not a widget/CSS/signal one, so it does not
+change any row of the per-unit tables above.
+
+**Still open, unchanged:** the desktop-file merge step
+(`data/applications/io.github.idevecore.Valuta.desktop` has no
+per-language `Name[xx]=`/`Comment[xx]=` sections; re-verified this round,
+file unchanged by `c8dcd6c`) and every "not independently re-verified this
+round" item from the prior two passes — `lib/currency_selector_row.rb`,
+the full `convertion_page.rb` widget tree, `lib/shell_search_provider.rb`'s
+term-parsing branches, and the settings mechanism's lack of a real
+installed GSettings schema (so no `gsettings`/`dconf-editor`/GNOME Settings
+visibility, still true, still unverified beyond the in-app path). None of
+these were touched by the one commit in scope this round, and none were
+re-derived from scratch in this pass either — they remain **unverified**,
+not newly confirmed, consistent with this skill's own rule against treating
+silence as a pass.

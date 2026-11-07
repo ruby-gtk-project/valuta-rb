@@ -154,3 +154,32 @@ prior pass — `lib/currency_selector_row.rb` and the full
 axes** in this pass too; nothing in the two intervening commits touched
 them, and this audit did not re-derive the widget scan from scratch given
 the time available. Treat that finding as still open, not newly closed.
+
+## Re-audit, 2026-11-07, against `ruby` @ `c8dcd6c`
+
+Two commits landed since the prior pass: `d6cce63` (rewrote
+`.reports/component-inventory.md` only — no `lib/` change) and `c8dcd6c`
+(the gettext domain fix, `Rakefile` + `lib/i18n.rb`, confirmed correct and
+closed in `translation-parity.md`'s and `component-parity.md`'s re-audits).
+Neither changed a widget type, CSS class, or signal in any unit identified
+above, so the identification tables themselves are unchanged.
+
+**One accuracy problem found in `d6cce63`'s rewrite of
+`component-inventory.md`, independent of the widget/CSS/signal axes this
+skill owns:** the rewritten document's overview line and its "Notes"
+section both assert, as of a commit made *after* `po/` and `gettext` had
+already landed (`f9bbc76`, over 18 hours earlier in the commit log) and
+after this very `.reports/` directory already recorded 184/185 translation
+messages ported, that "the `ruby` branch carries no `po/` directory of its
+own and no translation-parity work has been done yet." That statement is
+false of the tree at the moment it was written, not merely stale wording
+inherited unedited from an earlier pass — `d6cce63`'s diff rewrote this
+exact document after the true state was already knowable and already
+recorded on the same branch. See `accountability-ensurance.md` for the full
+treatment; noted here because it is a fact this skill's own method
+(reading the unit's actual port file, not trusting an inventory summary)
+would have caught had the inventory rewrite itself been read against
+`lib/i18n.rb` before being committed.
+
+No new unit was added, removed, or reclassified widget-vs-non-widget this
+round. The partial-coverage caveats from both prior passes stand unchanged.

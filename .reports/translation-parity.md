@@ -138,6 +138,63 @@ because rows are never deleted, not because it still describes `ruby` HEAD.
 - Did not claim `summary.parity: true`; it is false, on `domain_matches` and on the desktop-file gap, even though the message-key set is 184/185 effectively 185/185 once the unresolved row is explained.
 - Reported the occurrence/uses axis as a lead, not folded into the message-count pass condition.
 
+## Re-audit, 2026-11-07, against `ruby` @ `c8dcd6c`
+
+One commit landed since the previous pass: `c8dcd6c` ("Fix gettext domain
+mismatch (valuta, not the app id)"), touching `Rakefile` and `lib/i18n.rb`.
+
+**Domain mismatch: closed.** `lib/i18n.rb:22` now reads `DOMAIN = 'valuta'`,
+matching upstream's actual domain confirmed independently at
+`po/meson.build:1` (`i18n.gettext('valuta', preset: 'glib')`),
+`meson.build:1` (`project('valuta', ...)`), and `src/valuta.in:38-39`
+(`locale.bindtextdomain('valuta', localedir)`). The `Rakefile`'s
+`GETTEXT_DOMAIN` constant (`Rakefile:174`) is also `"valuta"`, and its
+comment now correctly separates the gettext domain from the committed
+`.pot` filename (which upstream itself still names after the app id,
+`po/io.github.idevecore.Valuta.pot` — not a bug, upstream's own choice).
+Rebuilt the catalogue in this audit (`rake gettext:mo:update`) and confirmed
+the compiled file is `locale/de/LC_MESSAGES/valuta.mo` (previously
+`io.github.idevecore.Valuta.mo`). Re-ran the on-screen German check from the
+prior pass directly against `lib/i18n.rb` (not hand-reproduced — the actual
+module, `include`d and exercised):
+
+```
+$ LANGUAGE=de nix develop --command xvfb-run -a ruby -e '... include I18n; p_("shortcuts window","General"); _("Keyboard shortcuts") ...'
+Allgemein
+Tastenkürzel
+```
+
+Both match `po/de.po`'s `msgstr` exactly, now under the correct domain name.
+This closes the one real translation-axis gap this document had open
+(`domain_matches` is now `true`).
+
+**Desktop-file localization: still open, unchanged.**
+`data/applications/io.github.idevecore.Valuta.desktop` still has no
+`Name[xx]=`/`Comment[xx]=` entries for any of the 33 languages (re-verified:
+`grep -c '\[' data/applications/io.github.idevecore.Valuta.desktop` →
+0). No commit since the prior pass touched this file or added a merge step.
+Still a component-axis gap (see `component-parity.md`), still wearing a
+translation symptom.
+
+**A claim in `.reports/component-inventory.md` is now stale and false, not
+merely unassessed.** The commit that follows the domain fix in history,
+`d6cce63` ("Inventory upstream components", committed *after* `f9bbc76`
+originally wired translation infra, and after this very document already
+recorded 184/185 parity), still asserts in two places that "`ruby` carries
+no `po/` directory of its own and no translation-parity work has been done
+yet." Both clauses are false of the tree at the commit that wrote them —
+`po/` has held 33 `.po` files since `f9bbc76`, and this document's own prior
+re-audit section, already committed on this branch, records 184/185. See
+`accountability-ensurance.md` for the full trace; recorded here too because
+it is this document's own numbers the stale claim contradicts.
+
+No other upstream message or `.po` file changed on `origin/main` since the
+prior pass (`git diff 0c9ee15..origin/main -- po/ src/ data/` — confirmed
+empty; upstream has not moved). Totals are unchanged: **184/185 messages,
+33/33 languages, domain now matches.** The one remaining translation-adjacent
+gap is the desktop-file merge step, which is a missing build mechanism, not
+a missing message.
+
 ---
 
 # Original pass (pre-`f9bbc76`) — kept verbatim, superseded above
