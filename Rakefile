@@ -165,16 +165,23 @@ end
 # by the translation-parity skill, in upstream's own flat layout
 # (po/<lang>.po, not GetText::Tools::Task's po/<lang>/<domain>.po). `locale/`
 # is build output (.gitignore'd).
-GETTEXT_DOMAIN = "io.github.idevecore.Valuta"
+# The gettext *domain* (what a compiled .mo is looked up by, and what
+# upstream's own gettext.install/bindtextdomain calls use) is "valuta" —
+# see lib/i18n.rb's DOMAIN comment. The *.pot filename upstream commits is
+# named after the app id instead (po/io.github.idevecore.Valuta.pot), a
+# separate, upstream-chosen convention this keeps so a regenerated .pot
+# lands at the same path the committed one already uses.
+GETTEXT_DOMAIN = "valuta"
+GETTEXT_POT_BASENAME = "io.github.idevecore.Valuta"
 
 begin
   require "gettext/tools/msgfmt"
 
-  desc "Extract lib/'s msgids into po/#{GETTEXT_DOMAIN}.pot (never edits po/*.po)"
+  desc "Extract lib/'s msgids into po/#{GETTEXT_POT_BASENAME}.pot (never edits po/*.po)"
   task "gettext:po:extract" do
     require "gettext/tools/xgettext"
     GetText::Tools::XGetText.run(
-      "--output", "po/#{GETTEXT_DOMAIN}.pot",
+      "--output", "po/#{GETTEXT_POT_BASENAME}.pot",
       "--package-name", "valuta",
       *(Dir.glob("lib/**/*.rb") + Dir.glob("exe/*")),
     )
