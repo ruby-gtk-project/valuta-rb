@@ -233,4 +233,63 @@ GtkDriver.drive(application, shots: 'tmp/shots', interval: 3000) do |d, app|
     rereloaded = Settings.new(path: app.utils.settings.location)
     d.check('a later write is visible to a new reader') { rereloaded.get_boolean('is-maximized') == true }
   end
+
+  # Actions.install registers upstream's accelerators through one
+  # set_accels_for_action call per action (Actions::ACCELERATORS), rather than
+  # the two separate app.quit calls upstream makes that silently collide
+  # (actions.rb's own comment). Reading them back off the live Gtk::Application
+  # is the only way to prove both app.quit bindings survived the merge into one
+  # call, not just that the hash literal names them.
+  d.step('the application carries upstream\'s accelerators, with both quit bindings alive') do
+    # Compared as parsed key combinations, not as strings: GTK hands
+    # get_accels_for_action back in its own canonical spelling
+    # ("<Control>q"), not the "<primary>q" ACCELERATORS itself is written in.
+    Actions::ACCELERATORS.each do |action, accels|
+      d.check("#{action} resolves to #{accels}") do
+        app.app.get_accels_for_action(action).map { |accel| Gtk.accelerator_parse(accel) } ==
+          accels.map { |accel| Gtk.accelerator_parse(accel) }
+      end
+    end
+    d.check('both app.quit accelerators are distinct, non-colliding bindings') do
+      app.app.get_accels_for_action('app.quit').uniq.length == 2
+    end
+  end
+
+  # Style.load installs this provider on the real display the driver already
+  # has open; the only way to prove the stylesheet the app ships is the one
+  # that gets this far (as opposed to one that silently failed to parse, which
+  # Gtk::CssProvider does not raise on) is to load it again with a
+  # parsing-error listener attached and check nothing fired.
+  d.step('the stylesheet parses with no errors swallowed') do
+    errors = []
+    Gtk::CssProvider.new.tap do |provider|
+      provider.signal_connect('parsing-error') { |_p, _section, error| errors << error.message }
+      provider.load_from_data(Style::CSS)
+    end
+    d.check('no parsing errors') { errors.empty? }
+    d.check('the provider installed on the display is a real CssProvider') do
+      Style.provider.is_a?(Gtk::CssProvider)
+    end
+  end
+
+  # CurrenciesListModel backs both selectors; the popover-search step above
+  # only ever exercises #filtered indirectly through a live selector. Driving
+  # it directly is the only way to assert set_currencies' items-changed
+  # notification and set_selected's single-row flip, neither of which the
+  # selector checks above touch.
+  d.step('the currencies list model notifies listeners and tracks selection directly') do
+    model = CurrenciesListModel.new(->(code) { code })
+    changes = []
+    model.on_items_changed { |position, removed, added| changes << [position, removed, added] }
+    model.set_currencies(%w[USD EUR GBP])
+    d.check('three currencies loaded') { model.n_items == 3 }
+    d.check('one items-changed notification fired, replacing nothing') { changes == [[0, 0, 3]] }
+    model.set_selected('EUR')
+    d.check('exactly one row is selected') { model.count(&:selected) == 1 }
+    d.check('and it is the one asked for') { model.find(&:selected).code == 'EUR' }
+    model.set_currencies(%w[JPY])
+    d.check('a second load replaces the list and reports the old length removed') do
+      changes.last == [0, 3, 1]
+    end
+  end
 end
