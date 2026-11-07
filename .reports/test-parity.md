@@ -43,3 +43,69 @@ None of this invalidates the 50 passing checks — they are real and they cover 
 - Did not read the 0/0 upstream result as "no test-parity work needed" — the extra section above and the gate-coverage gap are the work this skill still requires when upstream ships no tests.
 - Did not inflate 0/0 into a claim that the port is tested; stated explicitly that it has no inherited safety net.
 - Did not accept "50 checks, drive_ok=true" as evidence of whole-app coverage without checking which files/behaviors those 50 checks actually touch.
+
+## Re-audit, 2026-11-07, against current `ruby` HEAD (`0594500`)
+
+Upstream still has 0 tests (unchanged — re-confirmed `test-census.sh` against a
+fresh `origin/main` worktree: zero rows, no `test/`/`tests/`, no
+`unittest`/`pytest`, no test target). Parity remains **0/0, met trivially,
+no inherited safety net** — restating the finding above, not revising it.
+
+Since the previous pass, `0594500` added three more drive checks (accelerator
+round-trip off the live `Gtk::Application`, the stylesheet reload with a
+parsing-error listener, and `CurrenciesListModel`'s `items-changed`/
+`set_selected` behaviour driven directly). I re-ran both drivers myself under
+`nix develop --command xvfb-run -a ruby test/drive_*.rb`:
+
+```
+50 of 50 checks passed   DRIVE OK   (test/drive_convertion.rb)
+18 of 18 checks passed   DRIVE OK   (test/drive_search_provider.rb)
+```
+
+Combined **68 of 68 checks passed**, matching this round's runtime gate
+(`drive_ok=true, 68 checks, 0 failed`) exactly. That number is real and I
+reproduced it myself, not taken on trust.
+
+Three of the gate-coverage gaps the previous pass listed are now closed:
+the accelerator round-trip (`[21]`), the stylesheet parse-error listener
+(`[22]`), and the currencies-list-model notification/selection check (`[23]`)
+are all present and passing in the current `drive_convertion.rb`. The other
+gaps listed above — `application.rb`'s D-Bus-level search-provider service
+activation, `requests.rb`'s URL/`User-Agent` construction isolated from a
+live network call, and non-English rendering — were **not** closed by either
+commit since the last pass and still stand exactly as described above.
+Non-English rendering now has something to drive (gettext landed in
+`f9bbc76`), but no check drives it: neither driver sets `LANGUAGE=de` (or
+any non-English locale) and asserts on a translated string. I verified by
+hand, outside the suite, that `LANGUAGE=de` does produce correctly-translated
+output (`po/de.po`'s `"General"` → `"Allgemein"` under its `shortcuts window`
+context, `"Keyboard shortcuts"` → `"Tastenkürzel"`) — see
+`translation-parity.md` — but **no check in `test/` pins that**, so a future
+regression in `lib/i18n.rb`'s `bindtextdomain` wiring would not fail any
+check in this suite, headless or otherwise.
+
+### New finding this round: the RSpec harness is scaffolding with zero tests, and running it reports a clean pass
+
+`spec/` contains only `spec_helper.rb` and `spec/README.md`. There is no
+`spec/*_spec.rb` anywhere on this branch. Running the devshell's own
+documented spec command:
+
+```
+$ ruby -e 'require "rspec/core"; exit RSpec::Core::Runner.run([...])'
+NOTE: kettle-test isn't installed; running with plain RSpec.
+No examples found.
+0 examples, 0 failures
+```
+
+This is not a parity gap against upstream (upstream has 0 tests, so 0/0 is
+still correct there) but it is a **false-green risk specific to this port**:
+`rake`/CI tooling that runs this command sees "0 failures" and a zero exit
+code, which reads exactly like a passing suite to any automation that checks
+the exit status rather than the example count. The devshell banner advertises
+`run the specs:` as if there is something to run. There is not. Anyone
+relying on "the specs are green" as a signal for this app is relying on a
+suite that has never executed a single assertion. This belongs in the
+runtime-gate framing explicitly: the 68 checks that *do* exist and *do* pass
+are in `test/drive_*.rb`, not in `spec/`, and the gate's "68 checks" number
+should not be conflated with "the RSpec suite passes" — there is no RSpec
+suite yet, only its scaffold.

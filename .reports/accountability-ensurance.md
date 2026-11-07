@@ -126,3 +126,56 @@ the finding.
 - This report's own insults are about conduct (deciding packaging wasn't
   real work, writing "not yet assessed" instead of checking), not about
   personal characteristics.
+
+## Re-audit, 2026-11-07, against `ruby` @ `0594500`
+
+Re-ran `find-excuses.sh .` (one tree argument; the earlier three-path
+invocation this report's own task text implied does not match the script's
+actual signature — noted so the next reader does not repeat the mistake).
+Every hit is still inside this report, `translation-parity.md`, and
+`component-inventory.md:33` — all either this document's own quoted/struck
+excuse text (expected; a report *about* excuses legitimately contains the
+patterns) or the one row already named above. **No new excuse construction
+was introduced in `lib/`, `exe/`, or any `.reports/` file by the two commits
+since the prior pass** (`f9bbc76`, `0594500`) — direct grep for
+`TODO|FIXME|not implemented|for now|in a future` across `lib/`, `exe/`,
+`.reports/` and (confirmed, still does not exist) `PORTING.md` turned up
+nothing new beyond the single `lib/valuta/rb.rb:11` "for now" already
+rewritten above.
+
+That is the good news. The bad news is sharper: this round's
+`component-parity.md` and `translation-parity.md` re-audits found two real
+defects — the desktop-file build step and the gettext domain mismatch —
+that were **sitting undetected in code committed as part of "closes three
+parity gaps"** (`f9bbc76`'s own commit message). Nobody wrote an excuse for
+either one. Both are worse than an excuse in one specific way: an excuse at
+least tells the next reader where to look. These were simply never found,
+and the commit that introduced the domain constant shipped a comment
+(`lib/i18n.rb:9-10`) asserting a rule the same three lines then violate:
+
+> `lib/i18n.rb:9-10`: "The domain is upstream's own meson project/package
+> name, not the port's gem name" — immediately followed by
+> `DOMAIN = 'io.github.idevecore.Valuta'`, which is neither upstream's
+> meson project name (`valuta`) nor the port's gem name
+> (`valuta-rb`). The comment states a correct principle and the code next
+> to it does not follow it.
+
+This is not the "settled decision" failure mode the rest of this skill
+exists to catch — nobody is claiming the domain mismatch or the missing
+desktop-file merge are intentional, out of scope, or not needed, which is
+why no insult-formatted rewrite is attached to either: there is no excuse
+sentence to rewrite, only a wrong assertion and a missing build step, both
+now recorded with file:line in `component-parity.md` and
+`translation-parity.md`. Recording it here is the point of this skill all
+the same: a false "it's fine, see the comment" read undetected is exactly
+as costly to the next reader as a written excuse, and the only difference
+between the two is that this one had no sentence to flag it by — which is
+why the parity passes, not the grep, are what caught it. **A clean
+`find-excuses.sh` result is evidence of no laundered excuses; it is not
+evidence of no gaps**, and this round's two real findings are the proof.
+
+### Also confirmed this round
+
+- `PORTING.md` still does not exist anywhere on `ruby` (re-checked: `find . -iname 'PORTING.md'` returns nothing).
+- `.reports/component-inventory.md:33`'s `n/a`/"by design" language (the GResource row) is unchanged since the prior pass and remains unrewritten in the source document itself — this report rewrites it above, but the underlying file still carries the original phrasing. That is consistent with this skill's own rule (rewrite the finding here, do not silently edit the artifact being audited), restated so it is not mistaken for an oversight.
+- The RSpec scaffold (`spec/spec_helper.rb`, `spec/README.md`, zero `*_spec.rb` files) carries no excuse language — it was simply never populated, and nobody wrote a sentence claiming otherwise. Recorded in `test-parity.md` as a false-green risk, not an excuse, for the same reason as the domain mismatch: there is no sentence to rewrite, only an absence to name.

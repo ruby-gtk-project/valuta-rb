@@ -130,3 +130,27 @@ the code — but the earlier inventory report describes the wrong class
 hierarchy, which is exactly the kind of small inaccuracy that compounds if
 nobody rereads the source behind a summary table. See
 `accountability-ensurance.md`.
+
+## Re-audit, 2026-11-07, against `ruby` @ `0594500`
+
+Two units in scope here changed state since the prior pass:
+
+- **`data/metainfo/io.github.idevecore.Valuta.metainfo.xml.in`** now exists
+  (it did not at the time of the prior pass). Diffed directly against
+  upstream's `data/io.github.idevecore.Valuta.appdata.xml.in.in`: identical
+  apart from `@app-id@` build-time tokens resolved to the literal app ID —
+  a correspondence per the skill's rule on build-time tokens, not a gap.
+- **`lib/i18n.rb` + `lib/define.rb`'s `Define` module** are new units this
+  pass identifies that did not exist before `f9bbc76`. `Define` now
+  `extend`s `I18n`, and every one of the 160 `CODES` currency names is built
+  through `_('<name>')` rather than a bare string literal — a behavioural
+  change to a unit the prior pass had already inventoried structurally.
+
+No other unit in `lib/` changed shape (widget types, CSS classes, signals)
+between the two passes; `0594500` only added test coverage, not new widgets.
+The two components not independently re-verified widget-by-widget in the
+prior pass — `lib/currency_selector_row.rb` and the full
+`convertion_page.rb` widget tree — remain **unverified on the CSS/signal
+axes** in this pass too; nothing in the two intervening commits touched
+them, and this audit did not re-derive the widget scan from scratch given
+the time available. Treat that finding as still open, not newly closed.

@@ -117,3 +117,40 @@ as unverified on those axes, not as confirmed parity.**
   in both ledgers.
 - The prior `.reports/component-inventory.md`'s factual error about
   `Settings`'s superclass is named and corrected rather than repeated.
+
+## Re-audit, 2026-11-07, against `ruby` @ `0594500`
+
+Text axis: cross-filing `translation-parity.md`'s re-audit, 184 of 185
+upstream messages now carry a byte-identical, correctly-marked counterpart
+in the corresponding `lib/*.rb` file (the remaining row is explained there,
+not a real gap). This closes essentially all of the text-axis gaps the
+original `translation-parity.md` pass had opened against this document's
+units. Two exceptions carried over as open component gaps, not translation
+gaps:
+
+- **`data/applications/io.github.idevecore.Valuta.desktop`** has no
+  per-language `Comment[xx]=`/`Name[xx]=` entries. Upstream builds this file
+  via `i18n.merge_file(... type: 'desktop' ...)` at package time; the port
+  has no equivalent build step and ships a static, English-only file. This
+  is a missing **mechanism** (a desktop-file merge/generation step), not a
+  missing translation — the string is in the catalogue and translated in
+  all 33 `.po` files. Gap, component axis.
+- **`lib/i18n.rb`'s `DOMAIN` constant** (`io.github.idevecore.Valuta`) does
+  not match upstream's actual gettext domain (`valuta`, per
+  `meson.build:1`/`po/meson.build:1`/`src/valuta.in:38-39`). The port is
+  internally self-consistent (verified: German-locale strings render
+  correctly end to end under the port's own, differently-named domain), so
+  this is not a behavioural gap a user can observe today, but it is a real
+  divergence from upstream's naming and the stated rationale in
+  `lib/i18n.rb`'s own comment is factually wrong about what the constant is
+  set to. See `translation-parity.md`'s "Domain mismatch" section for the
+  full trace.
+
+No other widget/CSS/signal axis in the units already covered above changed
+between the two commits since the prior pass (`f9bbc76`, `0594500`) touched
+translation wiring and test coverage, not widget trees. The open items from
+the prior pass — `lib/currency_selector_row.rb`, the full
+`convertion_page.rb` tree, and `lib/shell_search_provider.rb`'s
+term-parsing branches, all listed as not independently re-verified on the
+CSS/signal axes — remain open; this re-audit did not have scope to redo that
+work and is not claiming to.
