@@ -1,0 +1,119 @@
+# Component parity — valuta
+
+| | |
+|---|---|
+| Upstream | `origin/main` |
+| Port | `ruby` |
+| Units with full (4-axis) parity confirmed in this pass | 2 / 18 (`lib/actions.rb`, `lib/style.rb`'s rule bodies) |
+| Units with count/CSS/signal/action parity but a confirmed text-axis gap | `lib/window.rb`, `lib/shortcuts.rb` |
+| Units not independently re-verified on all four axes this round | `lib/convertion_page.rb`, `lib/currency_selector.rb`, `lib/currency_selector_row.rb`, `lib/shell_search_provider.rb`, `lib/about_dialog.rb`, `lib/currency_object.rb`, `lib/currencies_list_model.rb`, `lib/convertion.rb`, `lib/requests.rb`, `lib/define.rb`, `lib/utils.rb`, `lib/application.rb` |
+
+Four axes, per `component-parity`: count, style, behaviour, text. Reading the
+units above against upstream file by file:
+
+## Unit: window — `src/window.py` + `src/window.blp` → `lib/window.rb`
+
+| Widget | Up × | Port × | CSS | Signals/Actions | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| `Adw.ApplicationWindow` | 1 | 1 | — | `close-request` ✓ | ✗ title `_("Valuta")` vs bare `'Valuta'` | **gap** (text) |
+| `Adw.ToolbarView` | 1 | 1 | — | — | — | parity |
+| `Adw.HeaderBar` | 1 | 1 | — | — | — | parity |
+| `Gtk.MenuButton` (header) | 1 | 1 | — | `primary: true` ✓ | ✗ `_("Main menu")` vs bare `'Main menu'` | **gap** (text) |
+| `Adw.Bin` (content) | 1 | 1 | — | — | — | parity |
+| `Gtk.Box` (bottom toolbar) | 1 | 1 | ✓ `toolbar` | — | — | parity |
+| `Gtk.Label` (info) | 1 | 1 | ✓ `dim-label` | — | — | parity (label text is computed at runtime, not upstream's empty `_("")` literal — not a gap) |
+| `Gtk.LinkButton` (source) | 1 | 1 | — | `visible: false` ✓ | ✗ `_("Source")` tooltip vs bare `'Source'` | **gap** (text) |
+| `window.providers` action | 1 | 1 | — | ✓ wired to `Settings#create_action` | — | parity |
+| `win.show-help-overlay` | 1 | 1 | — | ✓, but via a plain action instead of `Gtk.Window.set_help_overlay` | — | **correspondence**, not a gap — forced by a documented binding limitation |
+| `app.about` menu item | 1 | 1 | — | ✓ | ✗ `_("About Valuta")` vs `'About Valuta'` | **gap** (text) |
+| `window.providers::ecb` menu item | 1 | 1 | — | ✓ | ✗ `_("ECB")`/`_("Providers")` vs bare | **gap** (text) |
+
+Count/style/behaviour axes: **parity.** Text axis: **gap, every string in the
+unit.**
+
+## Unit: shortcuts — `src/components/shortcuts/*` → `lib/shortcuts.rb`
+
+| Widget | Up × | Port × | CSS | Signals/Actions | Text | Verdict |
+|---|---:|---:|---|---|:-:|---|
+| Shortcuts window/dialog | 1 | 1 | `modal: true` not re-settable on `Adwaita::ShortcutsDialog` from the port's code — not verified either way | — | — | **correspondence**, forced substitution, documented |
+| `ShortcutsSection`/`Adwaita::ShortcutsSection` | 1 | 1 | — | — | — | parity |
+| `ShortcutsGroup`/section title | 1 | 1 | — | — | ✗ `C_("shortcuts window", "General")` vs `'General'` | **gap** (text) |
+| `ShortcutsShortcut` ×3 | 3 | 3 | — | ✓ all three `action-name`s match | ✗ all three titles unmarked and lose their `"shortcuts window"` msgctxt | **gap** (text, ×3) |
+
+Count/behaviour axes: **parity** (all three shortcuts present, correct
+actions). Text axis: **gap on all four strings.**
+
+## Unit: actions — `src/actions.py` → `lib/actions.rb`
+
+| Action | Upstream accels | Port accels | Verdict |
+|---|---|---|---|
+| `app.quit` | `<primary>q`, then `<primary>w` (second call overwrites the first — upstream bug, only Ctrl+W actually quits) | `<primary>q` **and** `<primary>w` both bound | **correspondence, upstream bug fixed and documented** |
+| `app.about` | — | — | parity |
+| `app.switch-currencies` | `<primary>s` | `<primary>s` | parity |
+| `win.show-help-overlay` | `<Primary>question` | `<Primary>question` | parity |
+
+No translatable text in this unit (action names are not user-visible
+strings). **Full 4-axis parity**, including the one place the port correctly
+diverges from upstream's *actual* runtime behavior and says so in a comment.
+
+## Unit: stylesheet — `src/assets/style.css` → `lib/style.rb`
+
+Rule bodies are byte-identical (direct diff, see
+`component-identification.md`). **Style axis: parity for rule content.**
+Attachment is a mixed finding:
+
+- `lib/currency_selector.rb` attaches `'currency-selector'` (corrected
+  spelling) where upstream's `index.blp:30` attaches `'curency-selector'`
+  (upstream's own typo). The port's popover will render **differently from
+  upstream's actual shipped popover** — upstream's `.currency-selector
+  list/row/separator` rules never fire upstream, and they will fire in the
+  port. This is a real, user-visible divergence from upstream-as-shipped. It
+  is not recorded as a "style gap" in the pass/fail sense (the port's result
+  is arguably *more correct*), but it is recorded here because
+  component-parity is about matching what upstream actually does, and this
+  wasn't flagged anywhere before this audit, nor was it acknowledged as an
+  intentional deviation in any ledger prior to this one.
+
+## Unit: settings — `src/utils.py::Settings` → `lib/settings.rb`
+
+Not a `Gio.Settings` subclass as the prior `.reports/component-inventory.md`
+claimed (see `component-identification.md`'s correction) — it's a hand-rolled
+JSON-backed store. Functionally the keys, defaults and enum (`providers`:
+`ecb`) match the upstream schema's keys
+(`providers`, `width`, `height`, `is-maximized`, `is-fullscreen`,
+`src-currency`, `dest-currency`). This is a legitimate, documented
+correspondence on the **mechanism** axis. It is **not independently verified
+in this pass** that `create_action`/`bind`/`apply_to` reproduce every
+observable behavior `Gio::Settings.create_action` provides (e.g. whether an
+external `gsettings set io.github.idevecore.Valuta providers ecb` from the
+CLI would be picked up — it would not, since there is no real schema
+registered anywhere on the system). That is a real, if narrow, behavioral
+gap: anything outside the app itself that expects this to be a real
+GSettings-backed app (a GNOME Settings panel entry, `gsettings` CLI,
+`dconf-editor`) finds nothing, where upstream is a normal GSettings app.
+
+## What this pass did not cover
+
+Per `component-identification.md`'s scope note, `lib/convertion_page.rb`
+(three preference groups + stack states), `lib/currency_selector.rb`'s/
+`lib/currency_selector_row.rb`'s full widget trees, and
+`lib/shell_search_provider.rb`'s term-parsing branches were **not**
+independently re-verified on the CSS/signal axes in this round. The passing
+drive scripts (see `test-parity.md`) give behavioral confidence for the paths
+they exercise, but a passing behavioral check is not the same claim as a
+verified CSS-class/signal inventory — a button could respond to `clicked` and
+still be missing a CSS class the scan would have caught. **Treat these units
+as unverified on those axes, not as confirmed parity.**
+
+## Rules followed
+
+- No app-wide total is reported as "parity" — findings are per unit, per
+  widget, per axis.
+- The CSS-typo divergence and the accelerator-bug fix are both named,
+  located by file:line, and recorded as correspondences/divergences rather
+  than silently folded into "parity" or silently treated as gaps.
+- Every text-axis gap found here is cross-filed in `translation-parity.md`
+  against the same message, per the skill's rule that a text gap is recorded
+  in both ledgers.
+- The prior `.reports/component-inventory.md`'s factual error about
+  `Settings`'s superclass is named and corrected rather than repeated.
