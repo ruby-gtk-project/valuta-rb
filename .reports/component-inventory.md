@@ -1,60 +1,220 @@
-# Valuta component inventory
+# valuta-rb — component inventory
 
-Surveyed against `origin/main` (upstream Python/Blueprint) for the full-parity
-port on `ruby`. One row per upstream unit, in the order a user meets it:
-application, window, its page, the components the page composes, dialogs,
-settings/actions/shell integration, then non-UI support files. No app code
-was written for this survey.
+Upstream is `origin/main` (PyGObject + Blueprint). Survey only — no app code
+was written for this report. Per-file component scan, cross-referenced
+against the `.blp` templates (which are the authoritative widget trees) and
+the `ruby` branch's `lib/`.
 
-| Upstream file(s) | Kind | → `lib/*.rb` | Exists on `ruby`? | Notes |
-|---|---|---|---|---|
-| `src/main.py` | entry point | `lib/main.rb` | Yes | Builds and runs the `Application`. |
-| `src/application.py` | app singleton (`Adw.Application`) | `lib/application.rb` | Yes | `do_activate`/`do_command_line`, owns `Utils`, wires `application_actions`, handles the `--src-currency-value` CLI option for second-invocation hand-off into the already-open window. |
-| `src/actions.py` | app-level actions + accels | `lib/actions.rb` | Yes | Installs `app.quit`, `app.about`, `app.switch-currencies`; accels `<primary>q`/`<primary>w` (quit), `<primary>s` (switch), `<Primary>question` (`win.show-help-overlay`). |
-| `src/about.py` | dialog (`Adw.AboutDialog`) | `lib/about_dialog.rb` | Yes | App metadata, developers/designers, debug info string, GPL-3.0 license. |
-| `src/window.py` + `src/window.blp` | window (`Adw.ApplicationWindow`) | `lib/window.rb` | Yes | `Adw.ToolbarView`: header bar with `menu_button` (primary menu); content bin holding the conversion page; bottom toolbar box with `info` label (dim-label) and `source` `Gtk.LinkButton` (hidden until a conversion lands). Installs the `window` action group (`window.providers` from GSettings) and binds window-state settings (width/height/maximized/fullscreened). `primary_menu`: Providers section (ECB → `window.providers::ecb`), then `win.show-help-overlay` and `app.about`. |
-| `src/pages/convertion/convertion.py` + `index.blp` | page | `lib/convertion_page.rb` | Yes | The app's only page. `Adw.ToastOverlay` → `Adw.PreferencesPage` with 3 groups: **From** (amount `Gtk.Entry` + `from_currency_selector` in the group header suffix), a centered group holding the circular `app.switch-currencies` button, **To** (accent `Adw.Bin` wrapping a `Gtk.Stack` of `result`/`loading`/`convertion-error` pages, each inside a `WindowHandle`, + `to_currency_selector` in the group header suffix). Toast on conversion failure. |
-| `src/components/currency_selector/currency_selector.py` + `index.blp` | component (`Adw.Bin` template) | `lib/currency_selector.rb` | Yes | `MenuButton` (styles `rised flat`) showing a code label + an "auto" insight label, opening a `Popover` (styles `menu`, `curency-selector`) with a `SearchEntry` and a `ListBox` of `CurrencySelectorRow`s over a sorted+filtered model. Emits `user-selection-changed`; `selected` is a bindable property. Handles Escape (popdown) and Down (stop propagation) on the search entry. |
-| `src/components/currency_selector_row/currency_selector_row.py` + `index.blp` | component (`Gtk.ListBoxRow` template) | `lib/currency_selector_row.rb` | Yes | One row: a `Label` (`CODE – shortened name`) + a selection checkmark `Image` bound to the currency object's `selected` property. |
-| `src/components/shortcuts/shortcuts.py` + `shortcuts.blp` | dialog (`Gtk.ShortcutsWindow` template) | `lib/shortcuts.rb` | Yes | One group "General": keyboard shortcuts (`win.show-help-overlay`), switch currencies (`app.switch-currencies`), quit (`app.quit`). Note: `Gtk.ShortcutsWindow` can't be subclassed/built the same way from these Ruby bindings — `lib/window.rb`'s own comment flags that `show-help-overlay` is wired as a plain action presenting an Adwaita dialog instead; verify `lib/shortcuts.rb` still reproduces the same three shortcut rows as a real window/dialog. |
-| `src/utils.py` → class `CurrencyObject` | model (`GObject.Object`) | `lib/currency_object.rb` | Yes | `code`, `name`, `selected` (bool) properties; `__str__` → code. |
-| `src/utils.py` → class `CurrenciesListModel` | model (`Gio.ListModel`) | `lib/currencies_list_model.rb` | Yes | Wraps an array of `CurrencyObject`; `set_currencies` replaces the list and fires `items_changed`; `set_selected` flips the `selected` flag that drives the row checkmark. |
-| `src/utils.py` → class `Convertion` | service / event bus | `lib/convertion.rb` | Yes | Caches the last converted pair+provider; `convert` re-fetches only when the pair/provider changed or the previous fetch failed, otherwise re-multiplies locally; `convert_raw` (no cache, no event) is what the search provider uses; emits `"converted"` to any number of listeners. |
-| `src/utils.py` → class `Settings` | model (hand-rolled JSON store, not a `Gio.Settings` subclass) | `lib/settings.rb` | Yes | A JSON file under `XDG_CONFIG_HOME` that reproduces GSettings' read/write/enum/`create_action`/change-notification surface (`[]`, `[]=`, `get_string`/`set_string`, `get_enum`/`set_enum`, `on_changed`, `create_action`), chosen because GSettings needs a compiled schema installed into `glib-2.0/schemas` and the port runs from a checkout. See `.reports/component-identification.md:112-126`. |
-| `src/utils.py` → class `Utils` | service | `lib/utils.rb` | Yes | Owns `settings`/`convertion`, locale resolution, `CODES`, `providers` map, and locale-aware `format_number`/`parse_number` (Babel-backed upstream). |
-| `src/requests.py` | service (HTTP) | `lib/requests.rb` | Yes | `Providers`/`ECB` build the Frankfurter URL and parse the response into `{base, from, to, amount, info, disclaimer, provider}`; `SoupSession` wraps `Soup.Session` with a fixed `User-Agent`; `Requests` dispatches by provider id. |
-| `src/define.in` | generated constants (`APP_ID`, `VERSION`, `PROFILE`, `RES_PATH`, `BASE_URL_LANG_PREFIX`, `CODES` currency table) | `lib/define.rb` | Yes | 1146 lines — almost entirely the `CODES` currency table (code → name/providers/etc.), same role as upstream's generated `define.py`. |
-| `src/valuta.in` (meson-generated launcher) | launcher | `lib/valuta.rb` / `lib/valuta` | Yes | Entry script analogous to the generated `valuta` launcher. |
-| `src/search_provider/search_provider.in` + `.../io.github.idevecore.Valuta.SearchProvider.ini` | GNOME Shell search provider (D-Bus service) | `lib/shell_search_provider.rb` | Yes | Implements `org.gnome.Shell.SearchProvider2` (`GetInitialResultSet`, `GetSubsearchResultSet`, `GetResultMetas`, `ActivateResult`, `LaunchSearch`): parses `"<amount> <FROM> to <TO>"` or a bare amount against the currently-set pair, returns a converted-value result plus a "copy to clipboard" result, and can relaunch the app with `--src-currency-value`. Worth a close re-check against upstream's exact term-parsing branches (4-token form vs. bare amount, `on_currencies_changed` cache invalidation) since this is the easiest piece to under-port. |
-| `src/assets/style.css` | stylesheet | `lib/style.rb` | Yes | Ruby has no CSS file by house style; classes referenced across the app (`f-l`, `pd`, `rounded`, `top-transform`, `curency-selector`, etc.) must all still resolve — confirm `lib/style.rb` defines every class the ported widgets apply, not just the ones used so far. |
-| `data/io.github.idevecore.Valuta.gschema.xml.in` | GSettings schema | reproduced by `lib/settings.rb`'s JSON store (no compiled schema installed) | Yes | Keys: `providers` (enum, default `ecb`), `width`/`height`/`is-maximized`/`is-fullscreen` (window state), `src-currency` (default `USD`), `dest-currency` (default `EUR`). **Gap to double check:** `convertion.py` connects `settings.connect("changed::high-precision", …)` but the schema shown has no `high-precision` key — likely dead/vestigial upstream code, not a missing port feature; confirm before porting a `high-precision` setting that doesn't actually exist. |
-| `data/io.github.idevecore.Valuta.desktop.in.in`, `.service.in`, icons under `data/icons/**` | packaging metadata, not UI code | `data/applications/io.github.idevecore.Valuta.desktop`, `data/dbus-1/services/…`, `data/gnome-shell/search-providers/…`, `data/icons/**` | Yes | Ported as static (non-`.in`) files under `data/`, since the port has no meson/Flatpak build step to expand `@APP_ID@`-style substitutions. |
-| `data/io.github.idevecore.Valuta.appdata.xml.in.in` | AppStream metainfo | `data/metainfo/io.github.idevecore.Valuta.metainfo.xml.in` | Yes | Ported this round; see `TRANSLATION_PARITY.md`. |
-| `src/valuta.gresource.xml` | GResource manifest (bundles the `.ui`/`.blp`-compiled files + CSS + icons) | n/a | n/a | The Ruby house style has no `.ui`/GResource layer — widgets are built directly in `lib/*.rb`, so this file has no port target by design. |
-| `po/*.po`, `po/io.github.idevecore.Valuta.pot`, `po/LINGUAS`, `po/POTFILES` | translation catalogue (33 languages) | `po/*.po`, `po/io.github.idevecore.Valuta.pot`, `po/LINGUAS`, `po/POTFILES` (rewritten to Ruby paths) | Yes | Ported this round; see `TRANSLATION_PARITY.md` for the per-message census and the `gettext` wiring in `lib/`. |
+Upstream source (`git ls-tree -r --name-only origin/main`, app-relevant subset):
 
-## Summary
+```
+src/about.py
+src/actions.py
+src/application.py
+src/components/currency_selector/currency_selector.py
+src/components/currency_selector/index.blp
+src/components/currency_selector_row/currency_selector_row.py
+src/components/currency_selector_row/index.blp
+src/components/shortcuts/shortcuts.py
+src/components/shortcuts/shortcuts.blp
+src/define.in
+src/main.py
+src/pages/convertion/convertion.py
+src/pages/convertion/index.blp
+src/requests.py
+src/search_provider/search_provider.in
+src/utils.py
+src/window.py
+src/window.blp
+data/io.github.idevecore.Valuta.gschema.xml.in
+src/valuta.gresource.xml
+po/*.po (33 locales) + po/io.github.idevecore.Valuta.pot
+```
 
-Every upstream user-facing unit (app, window, page, both selector components,
-the shortcuts dialog, the about dialog, actions, settings/convertion/requests
-services, the currency data table, and the shell search provider) already has
-a corresponding non-empty file under `lib/` on `ruby`. This survey did not
-diff behavior line-by-line (that is `component-parity`'s job); it only
-confirms unit-level coverage and calls out three things worth a parity pass
-before calling the port done:
+Overall result: **every upstream file that contributes a component already
+has a corresponding `lib/*.rb` on `ruby`, and every one of them carries a
+"Ported from upstream's ..." header naming its source.** This is a mature
+port, not a fresh scaffold — the table below is a parity check, not a to-do
+list. The one open item is translations (`po/*.po`), which have no `lib/`
+analogue and are out of scope for `component-identification`; see the
+Notes section.
 
-1. **Shortcuts window** (`lib/shortcuts.rb` / `lib/window.rb`) — upstream uses
-   a real `Gtk.ShortcutsWindow` template; the port's own comment says that
-   can't be built the same way from these bindings and substitutes something
-   else presented from an action. Confirm the substitute still shows all
-   three shortcut rows (keyboard shortcuts, switch currencies, quit).
-2. **Shell search provider** (`lib/shell_search_provider.rb`) — the most
-   state-machine-heavy file upstream (term parsing, result caching,
-   relaunching with `--src-currency-value`); worth a dedicated parity pass.
-3. **`high-precision` GSettings key** referenced in `convertion.py` but absent
-   from the current `gschema.xml.in` — confirm it's dead upstream code before
-   treating it as a missing port feature.
+## Window — the application window
 
-No missing `lib/` file was found; no action, in this survey's reading, is
-required to *create* a new component file. Behavioral parity per file is the
-next step (`component-parity` skill), not covered here.
+**Upstream:** `src/window.py` + `src/window.blp` → **Port:** `lib/window.rb` — exists
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.ApplicationWindow` | 1 | — | `close-request` | built from the `Gtk::Application` by composition in the port, since subclassing fails on these bindings (noted in `window.rb`) |
+| `Adw.ToolbarView` | 1 | — | — | top bar = header, content = conversion page bin, bottom bar = status toolbar |
+| `Adw.HeaderBar` | 1 | — | — | packs the menu button at the end |
+| `Gtk.MenuButton` | 1 | — | — | `primary: true`, `menu-model: primary_menu`, icon `open-menu-symbolic` |
+| `Adw.Bin` (content) | 1 | — | — | holds the conversion page; swapped by `load_convertion_page` |
+| `Gtk.Box` (status bar) | 1 | `toolbar` | — | horizontal, centered, holds info label + source link |
+| `Gtk.Label` (info) | 1 | `dim-label` | — | rate-date status text |
+| `Gtk.LinkButton` (source) | 1 | — | — | starts `visible: false`; shown once a conversion lands, links to the provider's disclaimer URL |
+| menu `primary_menu` | 1 | — | — | Providers section (1 radio item, `window.providers::ecb`) + shortcuts/about section |
+
+Actions installed/targeted here: `window.providers` (via `Gio::SimpleActionGroup` + `Settings#create_action`), `win.show-help-overlay` (built here since the GTK4 Ruby bindings cannot construct `Gtk::ShortcutsWindow`; presents an Adwaita dialog instead), targets `app.about`.
+
+Repeaters: none. Conditional: `source` link button only visible after first successful conversion.
+
+## ConvertionPage — the amount/currency conversion page
+
+**Upstream:** `src/pages/convertion/convertion.py` + `index.blp` → **Port:** `lib/convertion_page.rb` — exists
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.ToastOverlay` | 1 | — | — | root; shows the "Error converting" toast |
+| `Gtk.Box` | 1 | — | — | vertical, `valign: center` wrapper |
+| `Adw.PreferencesPage` | 1 | — | — | |
+| `Adw.PreferencesGroup` ("From") | 1 | — | — | header-suffix hosts the from-currency selector |
+| `Gtk.Entry` (from_currency_entry) | 1 | `f-l` | `changed` | numeric input-purpose; drives `convert` |
+| `Adw.PreferencesGroup` (switch) | 1 | — | — | centered |
+| `Gtk.Button` (invert_currencies) | 1 | `circular`, `pd` | action `app.switch-currencies` | no explicit `clicked` handler — fires the action directly |
+| `Adw.PreferencesGroup` ("To") | 1 | `top-transform` | — | header-suffix hosts the to-currency selector |
+| `Adw.Bin` (result wrapper) | 1 | `f-l`, `text-light`, `bg-accent-color`, `rounded` | — | |
+| `Gtk.Stack` | 1 | — | — | 3 pages: result / loading / convertion-error |
+| `WindowHandle` ×3 | 3 | — | — | one per stack page |
+| `Gtk.Label` (to_currency_entry) | 1 | — | — | selectable, result text |
+| `Gtk.Box` (loading) | 1 | — | — | centers the spinner |
+| `Gtk.Spinner` | 1 | — | `spinning: true` | |
+| `Gtk.Box` (error) | 1 | — | — | centers the reload button |
+| `Gtk.Button` (reload) | 1 | `circular` | `clicked` | retries the conversion |
+| `CurrencySelector` (from) | 1 | — | `notify::selected` | own component, see below |
+| `CurrencySelector` (to) | 1 | — | `notify::selected` | own component, see below |
+
+Behaviour wired at this level: `Gio.Task`-backed background fetch (port note: "fetched off the main thread, as upstream does with a Gio.Task"), `settings.connect("changed::providers"/"changed::src-currency"/"changed::dest-currency"/"changed::high-precision")`, `convertion.connect("converted")`.
+
+Repeaters: none (fixed 3-page stack). Conditional: stack page selection is state-driven (loading / result / error), not a widget presence gap.
+
+## CurrencySelector — the popover currency picker (used twice, from/to)
+
+**Upstream:** `src/components/currency_selector/currency_selector.py` + `index.blp` → **Port:** `lib/currency_selector.rb` — exists
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.Bin` (template root) | 1 | — | `notify::selected` → `_on_selected_changed` | |
+| `Gtk.MenuButton` | 1 | `rised`, `flat` | — | `always-show-arrow: true` |
+| `Gtk.Box` (button child) | 1 | — | — | spacing 3 |
+| `Gtk.Label` (label) | 1 | — | — | ellipsize end |
+| `Gtk.Label` (insight) | 1 | — | — | ellipsize end; shows "(name)" when `selected == 'auto'` |
+| `Gtk.Popover` | 1 | `curency-selector`, `menu` | `show` → `_popover_show`; `closed` → `_popover_closed` | 300×300 |
+| `Gtk.Box` (popover body) | 1 | — | — | vertical |
+| `Gtk.Box` (search_box) | 1 | `search-box` | — | |
+| `Gtk.SearchEntry` | 1 | — | `changed` → `_on_search`; `activate` → `_on_search_activate` | |
+| `Gtk.ScrolledWindow` | 1 | — | — | `vexpand: true` |
+| `Gtk.ListBox` (currency_list) | 1 | — | `row-activated` → `_activated` | `selection-mode: single`; bound to a filtered/sorted model |
+| `Gtk.EventControllerKey` | 1 (controller) | — | `key-pressed` | Escape closes popover, Down stops propagation — attached to `search` |
+| `Gtk.CustomFilter` / `Gtk.CustomSorter` / `Gtk.SortListModel` / `Gtk.FilterListModel` | — | — | — | non-widget model plumbing, not counted as widgets |
+
+Signal: custom `user-selection-changed` GObject signal emitted from `_activated`.
+
+Repeaters: `currency_list` rows are built one `CurrencySelectorRow` per filtered/sorted model item via `bind_model`/`create_currency_row` — a repeater, not a fixed count.
+
+## CurrencySelectorRow — one row in the currency popover's list
+
+**Upstream:** `src/components/currency_selector_row/currency_selector_row.py` + `index.blp` → **Port:** `lib/currency_selector_row.rb` — exists
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Gtk.ListBoxRow` (template root) | 1 | — | — | holds `currency` (a `CurrencyObject`) |
+| `Gtk.Box` | 1 | — | — | spacing 6 |
+| `Gtk.Label` (name) | 1 | — | — | `"{code} – {truncated name}"`, truncated to 30 chars with `...` |
+| `Gtk.Image` (selection) | 1 | — | — | `object-select-symbolic`, visibility bound (`GObject.BindingFlags.SYNC_CREATE`) to `currency.selected` |
+
+Repeaters: none per-row (this *is* the repeated unit, counted at the `CurrencySelector` level).
+
+## Shortcuts — the keyboard shortcuts window
+
+**Upstream:** `src/components/shortcuts/shortcuts.py` + `shortcuts.blp` → **Port:** `lib/shortcuts.rb` — exists
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Gtk.ShortcutsWindow` (template root) | 1 | — | — | `modal: true`; port note says GTK4 Ruby bindings can't construct this directly, builds an Adwaita dialog substitute instead — see `window.rb`'s `show_help_overlay_action` |
+| `Gtk.ShortcutsSection` | 1 | — | — | `max-height: 10` |
+| `Gtk.ShortcutsGroup` ("General") | 1 | — | — | |
+| `Gtk.ShortcutsShortcut` | 3 | — | — | Keyboard shortcuts / Switch currencies / Quit, each bound to an action name (`win.show-help-overlay`, `app.switch-currencies`, `app.quit`) rather than an accelerator string |
+
+Repeaters: none (fixed 3 shortcuts).
+
+## AboutDialog — the app.about dialog
+
+**Upstream:** `src/about.py` → **Port:** `lib/about_dialog.rb` — exists
+
+| Widget | × | CSS | Signals | Notes |
+|---|---:|---|---|---|
+| `Adw.AboutDialog` | 1 | — | — | app name, icon, developer/designer credits, issue URL, debug info block (app id/version, OS info, bindings version, Adw/Gtk/GLib versions, Flatpak info), `Gtk.License.GPL_3_0` |
+
+## Application — the app singleton, actions and accelerators
+
+**Upstream:** `src/application.py` (window/app lifecycle) + `src/actions.py` (actions) → **Port:** `lib/application.rb` + `lib/actions.rb` — both exist
+
+| Item | Kind | Notes |
+|---|---|---|
+| `Adw.Application` | type (owner) | `--src-currency-value` CLI option, `do_activate`/`do_command_line` lifecycle, singleton active-window reuse |
+| `app.quit` | action | accel `<primary>q`, `<primary>w` (port fixes upstream's accidental accel overwrite — see `actions.rb` comment) |
+| `app.about` | action | presents `AboutDialog` |
+| `app.switch-currencies` | action | accel `<primary>s`; swaps `src-currency`/`dest-currency` settings |
+| `win.show-help-overlay` | accel only (`<Primary>question`) | action itself is installed per-window in `window.rb` |
+
+## Settings / Convertion / Requests / CurrenciesListModel / CurrencyObject / Utils / Style / Define / I18n — non-widget support
+
+These carry no on-screen components of their own (GSettings wrapper, HTTP
+client, list model, data object, number formatting, CSS provider,
+compile-time constants, gettext binding) but are components' *dependencies*
+and are already ported 1:1:
+
+| Upstream | Port | Exists |
+|---|---|---|
+| `data/io.github.idevecore.Valuta.gschema.xml.in` + `Settings` in `src/utils.py` | `lib/settings.rb` | yes |
+| `Convertion` class in `src/utils.py` | `lib/convertion.rb` | yes |
+| `src/requests.py` | `lib/requests.rb` (uses `soup3`'s `Soup::Session`/`Soup::Message` — see Notes) | yes |
+| `CurrenciesListModel` in `src/utils.py` | `lib/currencies_list_model.rb` | yes |
+| `CurrencyObject` in `src/utils.py` | `lib/currency_object.rb` | yes |
+| `Utils` class in `src/utils.py` | `lib/utils.rb` | yes |
+| `src/assets/style.css` | `lib/style.rb` | yes |
+| `src/define.in` (CODES table + constants) | `lib/define.rb` | yes |
+| gettext setup in `src/define.in` | `lib/i18n.rb` | yes |
+| `src/main.py` | `lib/main.rb` | yes |
+
+## ShellSearchProvider — the GNOME Shell search provider D-Bus service
+
+**Upstream:** `src/search_provider/search_provider.in` (+ `.ini`/`.service.in`/`meson.build`) → **Port:** `lib/shell_search_provider.rb` — exists
+
+Not a widget component (no GTK on this path) but a user-facing surface
+(Shell search results: initial/subsearch result sets, result metas,
+activate/launch-search, clipboard-copy result). D-Bus interface
+`org.gnome.Shell.SearchProvider2`, methods `GetInitialResultSet`,
+`GetSubsearchResultSet`, `GetResultMetas`, `ActivateResult`, `LaunchSearch`.
+Confirmed present in `lib/shell_search_provider.rb` with a "Ported from the
+ConvertionService class in upstream's ..." header.
+
+## GResource manifest
+
+`src/valuta.gresource.xml` lists `window.ui`, the three component `.ui`s, the
+conversion page `.ui`, the stylesheet, and 7 symbolic icon SVGs. All of it
+maps onto widgets/CSS already inventoried above; the icons
+(`arrow1-{up,down}`, `code`, `dark-mode`, `help-about`, `refresh-large`,
+`sonar`, `vertical-arrows`) back icon-name references already used (e.g.
+`refresh-large-symbolic` on the reload button, `vertical-arrows-symbolic` on
+invert_currencies).
+
+## Notes
+
+- **`soup3` gem.** `lib/requests.rb` already `require`s `soup3` and drives
+  `Soup::Session`/`Soup::Message` on the live HTTP path (the ECB rate fetch).
+  The gemspec declares `spec.add_dependency("soup3")`. Nothing in `lib/`
+  hand-rolls an HTTP client in its place. This wiring was not regressed.
+- **Translations (`po/*.po`, 33 locales + the `.pot`).** Upstream has a full
+  `po/` catalogue; the port's `lib/i18n.rb` binds the same gettext domain
+  (`valuta`) so the existing `.mo` catalogues apply unchanged once installed,
+  but the `ruby` branch carries no `po/` directory of its own and no
+  `translation-parity` work has been done yet. That is this skill's sibling
+  skill's job, not this inventory's, and is flagged here only so it is not
+  lost.
+- **No gap found.** Every upstream file that owns a component already has a
+  corresponding, correctly-attributed `lib/*.rb`. This survey found no
+  missing component to scaffold. If a later pass finds a behavioural gap
+  (signal not wired, CSS class not applied, dynamic class value missing),
+  that is `component-parity` work, not `component-identification` work.
