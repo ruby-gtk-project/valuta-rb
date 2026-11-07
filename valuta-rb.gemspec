@@ -101,6 +101,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency("gtk4")
   spec.add_dependency("adwaita")
   spec.add_dependency("soup3")
+  spec.add_dependency("gettext")
 
   # NOTE: It is preferable to list development dependencies in the gemspec due to increased
   #       visibility and discoverability.

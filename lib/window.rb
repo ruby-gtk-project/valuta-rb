@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'convertion_page'
 require_relative 'shortcuts'
+require_relative 'i18n'
 
 # Window is the application window.
 #
@@ -16,6 +17,8 @@ require_relative 'shortcuts'
 # items.
 #
 class Window
+  include I18n
+
   WIDTH_REQUEST = 350
   HEIGHT_REQUEST = 300
   TOOLBAR_MARGIN = 6
@@ -95,7 +98,7 @@ class Window
       button.primary = true
       button.menu_model = primary_menu
       button.icon_name = 'open-menu-symbolic'
-      button.tooltip_text = 'Main menu'
+      button.tooltip_text = _('Main menu')
     end
   end
 
@@ -105,15 +108,15 @@ class Window
   def primary_menu
     @primary_menu ||= Gio::Menu.new.tap do |menu|
       menu.append_section(
-        'Providers',
-        Gio::Menu.new.tap { |section| section.append('ECB', 'window.providers::ecb') },
+        _('Providers'),
+        Gio::Menu.new.tap { |section| section.append(_('ECB'), 'window.providers::ecb') },
       )
 
       menu.append_section(
         nil,
         Gio::Menu.new.tap do |section|
-          section.append('Keyboard shortcuts', 'win.show-help-overlay')
-          section.append('About Valuta', 'app.about')
+          section.append(_('Keyboard shortcuts'), 'win.show-help-overlay')
+          section.append(_('About Valuta'), 'app.about')
         end,
       )
     end
@@ -138,7 +141,7 @@ class Window
 
   def source
     @source ||= Gtk::LinkButton.new('').tap do |button|
-      button.tooltip_text = 'Source'
+      button.tooltip_text = _('Source')
       button.visible = false
     end
   end

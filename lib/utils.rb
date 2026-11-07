@@ -5,6 +5,7 @@ require 'gio2'
 require_relative 'define'
 require_relative 'settings'
 require_relative 'convertion'
+require_relative 'i18n'
 
 # Utils is the application's shared service bag.
 #
@@ -23,6 +24,8 @@ require_relative 'convertion'
 # initialise GTK against.
 #
 class Utils
+  extend I18n
+
   FRACTION_DIGITS = 3
   GROUP_SIZE = 3
 
@@ -67,7 +70,7 @@ class Utils
     'zh' => [',', '.'],
   }.freeze
 
-  PROVIDERS = { '0' => 'ECB' }.freeze
+  PROVIDERS = { '0' => _('ECB') }.freeze
 
   SIGNS = { true => '-', false => '' }.freeze
   SPACES = /[[:space:]\u00A0\u202F\u2009]/

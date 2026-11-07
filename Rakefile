@@ -160,6 +160,44 @@ if kettle_jem_selftest_unavailable_note
   end
 end
 
+### TRANSLATION TASKS
+# po/ holds upstream's donated catalogue (33 languages), carried over verbatim
+# by the translation-parity skill, in upstream's own flat layout
+# (po/<lang>.po, not GetText::Tools::Task's po/<lang>/<domain>.po). `locale/`
+# is build output (.gitignore'd).
+GETTEXT_DOMAIN = "io.github.idevecore.Valuta"
+
+begin
+  require "gettext/tools/msgfmt"
+
+  desc "Extract lib/'s msgids into po/#{GETTEXT_DOMAIN}.pot (never edits po/*.po)"
+  task "gettext:po:extract" do
+    require "gettext/tools/xgettext"
+    GetText::Tools::XGetText.run(
+      "--output", "po/#{GETTEXT_DOMAIN}.pot",
+      "--package-name", "valuta",
+      *(Dir.glob("lib/**/*.rb") + Dir.glob("exe/*")),
+    )
+  end
+
+  desc "Compile po/*.po (upstream's flat layout) into locale/<lang>/LC_MESSAGES/#{GETTEXT_DOMAIN}.mo"
+  task "gettext:mo:update" do
+    File.read("po/LINGUAS").split.each do |locale|
+      po_path = "po/#{locale}.po"
+      next unless File.exist?(po_path)
+
+      mo_directory = "locale/#{locale}/LC_MESSAGES"
+      FileUtils.mkdir_p(mo_directory)
+      GetText::Tools::MsgFmt.run(po_path, "--output", "#{mo_directory}/#{GETTEXT_DOMAIN}.mo")
+    end
+  end
+rescue LoadError
+  desc("(stub) gettext tasks are unavailable")
+  task("gettext:mo:update") do
+    warn("NOTE: the gettext gem isn't installed in the current environment")
+  end
+end
+
 ### RELEASE TASKS
 # Setup stone_checksums
 begin

@@ -1,0 +1,12 @@
+data/metainfo/io.github.idevecore.Valuta.metainfo.xml.in
+data/applications/io.github.idevecore.Valuta.desktop
+lib/currency_selector.rb
+lib/currency_selector_row.rb
+lib/shortcuts.rb
+lib/convertion_page.rb
+lib/shell_search_provider.rb
+lib/main.rb
+lib/utils.rb
+lib/window.rb
+lib/define.rb
+lib/requests.rb

@@ -194,4 +194,43 @@ GtkDriver.drive(application, shots: 'tmp/shots', interval: 3000) do |d, app|
       dialog.close
     end
   end
+
+  # Application#command_line is private, and only the running application
+  # object (the Window already open, app.app.active_window set) exercises the
+  # branch upstream's do_command_line takes on a second invocation: hand the
+  # amount to the window instead of remembering it for one that does not exist
+  # yet. CommandLineDouble stands in for the Gio::ApplicationCommandLine
+  # command_line only reads .arguments from.
+  CommandLineDouble = Struct.new(:arguments)
+
+  d.step('a second invocation carries --src-currency-value') do
+    @before_entry = entry.call.text
+    app.send(:command_line, CommandLineDouble.new(['valuta', '--src-currency-value', '975']))
+  end
+
+  d.step('the running window picked up the new amount, not a new window') do
+    d.check('exactly one window is open') { app.app.windows.length == 1 }
+    d.check('the amount entry shows the new value') { entry.call.text == '975' }
+    d.check('the entry text actually changed') { entry.call.text != @before_entry }
+  end
+
+  # Settings' apply_to/remember is the restore/store pair upstream binds with
+  # Gio.SettingsBindFlags.DEFAULT. A fresh Settings instance reading the same
+  # path is the round-trip: what the window stored is what the next one reads.
+  d.step('the window state is stored and re-read from a fresh Settings') do
+    window.call.then do |win|
+      win.default_width = 512
+      win.default_height = 640
+      app.utils.settings.remember(win)
+    end
+
+    reloaded = Settings.new(path: app.utils.settings.location)
+    d.check('width round-trips') { reloaded.get_int('width') == 512 }
+    d.check('height round-trips') { reloaded.get_int('height') == 640 }
+    d.check('is-maximized round-trips') { reloaded.get_boolean('is-maximized') == window.call.maximized? }
+
+    reloaded['is-maximized'] = true
+    rereloaded = Settings.new(path: app.utils.settings.location)
+    d.check('a later write is visible to a new reader') { rereloaded.get_boolean('is-maximized') == true }
+  end
 end

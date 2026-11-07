@@ -4,6 +4,7 @@ require 'gio2'
 
 require_relative 'define'
 require_relative 'utils'
+require_relative 'i18n'
 
 # ConvertionService answers the GNOME Shell overview's searches.
 #
@@ -26,6 +27,8 @@ require_relative 'utils'
 # no display to initialise against.
 #
 class ConvertionService
+  extend I18n
+
   CLIPBOARD_PREFIX = 'copy-to-clipboard'
 
   # Upstream's prefix, inherited from the dialect project its search provider
@@ -44,9 +47,9 @@ class ConvertionService
 
   BIN = 'valuta'
 
-  PROVIDER_LABEL = 'According to'
-  COPY_LABEL = 'Copy'
-  COPY_DESCRIPTION = 'Copy convertion to clipboard'
+  PROVIDER_LABEL = _('According to')
+  COPY_LABEL = _('Copy')
+  COPY_DESCRIPTION = _('Copy convertion to clipboard')
 
   def initialize(utils = Utils.new)
     @utils = utils

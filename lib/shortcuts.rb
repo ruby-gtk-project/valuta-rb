@@ -2,6 +2,8 @@
 
 require 'adwaita'
 
+require_relative 'i18n'
+
 # Shortcuts is the keyboard shortcuts window, opened by win.show-help-overlay.
 #
 # Ported from upstream's src/components/shortcuts/shortcuts.py and
@@ -18,12 +20,18 @@ require 'adwaita'
 # machinery.
 #
 class Shortcuts < Adwaita::ShortcutsDialog
-  GROUP_TITLE = 'General'
+  extend I18n
+  include I18n
+
+  # Upstream's msgctxt, "shortcuts window", is written as a literal at every
+  # call site below rather than through a constant: the gettext gem's Ruby
+  # extractor (`rxgettext`) can only read a marker whose arguments are literals.
+  GROUP_TITLE = p_('shortcuts window', 'General')
 
   ITEMS = {
-    'Keyboard shortcuts' => 'win.show-help-overlay',
-    'Switch currencies'  => 'app.switch-currencies',
-    'Quit'               => 'app.quit',
+    p_('shortcuts window', 'Keyboard shortcuts') => 'win.show-help-overlay',
+    p_('shortcuts window', 'Switch currencies')  => 'app.switch-currencies',
+    p_('shortcuts window', 'Quit')                => 'app.quit',
   }.freeze
 
   def initialize

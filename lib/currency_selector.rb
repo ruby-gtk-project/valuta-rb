@@ -4,6 +4,7 @@ require 'adwaita'
 
 require_relative 'currencies_list_model'
 require_relative 'currency_selector_row'
+require_relative 'i18n'
 
 # CurrencySelector is the menu button that opens a searchable currency list.
 #
@@ -21,6 +22,8 @@ require_relative 'currency_selector_row'
 # notifies listeners of a selection change instead of emitting notify::.
 #
 class CurrencySelector < Adwaita::Bin
+  include I18n
+
   POPOVER_SIZE = 300
 
   attr_reader :selected, :model
@@ -178,7 +181,7 @@ class CurrencySelector < Adwaita::Bin
 
   def search
     @search ||= Gtk::SearchEntry.new.tap do |entry|
-      entry.placeholder_text = 'Search Currencies'
+      entry.placeholder_text = _('Search Currencies')
     end
   end
 

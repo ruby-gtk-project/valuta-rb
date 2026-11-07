@@ -5,6 +5,7 @@ require 'adwaita'
 require_relative 'currencies_list_model'
 require_relative 'currency_selector'
 require_relative 'define'
+require_relative 'i18n'
 
 # ConvertionPage is the application's only page: an amount in one currency and
 # the same amount in another.
@@ -22,6 +23,9 @@ require_relative 'define'
 # from the worker.
 #
 class ConvertionPage
+  extend I18n
+  include I18n
+
   RESULT = 'result'
   LOADING = 'loading'
   ERROR = 'convertion-error'
@@ -34,7 +38,7 @@ class ConvertionPage
   FALLBACK_SRC = 'USD'
   FALLBACK_DEST = 'EUR'
 
-  TOAST_MESSAGE = 'Error converting, please try again.'
+  TOAST_MESSAGE = _('Error converting, please try again.')
 
   def initialize(utils, from_currency_value = 0)
     @utils = utils
@@ -125,7 +129,7 @@ class ConvertionPage
 
   def from_group
     @from_group ||= Adwaita::PreferencesGroup.new.tap do |group|
-      group.title = 'From'
+      group.title = _('From')
       group.margin_start = GROUP_MARGIN
       group.margin_end = GROUP_MARGIN
       group.margin_bottom = FROM_GROUP_BOTTOM_MARGIN
@@ -156,7 +160,7 @@ class ConvertionPage
     @invert_currencies ||= Gtk::Button.new.tap do |button|
       button.add_css_class('circular')
       button.add_css_class('pd')
-      button.tooltip_text = 'Switch'
+      button.tooltip_text = _('Switch')
       button.icon_name = 'vertical-arrows-symbolic'
       button.action_name = 'app.switch-currencies'
     end
@@ -164,7 +168,7 @@ class ConvertionPage
 
   def to_group
     @to_group ||= Adwaita::PreferencesGroup.new.tap do |group|
-      group.title = 'To'
+      group.title = _('To')
       group.add_css_class('top-transform')
       group.margin_start = GROUP_MARGIN
       group.margin_end = GROUP_MARGIN
@@ -230,7 +234,7 @@ class ConvertionPage
     @reload ||= Gtk::Button.new.tap do |button|
       button.add_css_class('circular')
       button.icon_name = 'refresh-large-symbolic'
-      button.tooltip_text = 'Reload'
+      button.tooltip_text = _('Reload')
     end
   end
 

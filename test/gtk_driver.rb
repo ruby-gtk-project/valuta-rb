@@ -138,7 +138,15 @@ module GtkDriver
 
     private
 
+      # A step that exercises a real second invocation (Application#command_line
+      # always ends by calling app.activate, matching upstream's do_command_line)
+      # re-emits GTK's own "activate" signal on the already-running application,
+      # which would otherwise call back into this same handler and start a
+      # second, concurrent step loop from index 0. One stepper per run.
       def schedule(application)
+        return if @scheduled
+
+        @scheduled = true
         index = 0
 
         GLib::Timeout.add(@interval) do

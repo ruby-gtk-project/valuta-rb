@@ -1,0 +1,707 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the valuta package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: valuta VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-07 02:21+0000\n"
+"PO-Revision-Date: 2026-11-07 02:21+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ../lib/convertion_page.rb:41
+msgid "Error converting, please try again."
+msgstr ""
+
+#: ../lib/convertion_page.rb:132
+msgid "From"
+msgstr ""
+
+#: ../lib/convertion_page.rb:163
+msgid "Switch"
+msgstr ""
+
+#: ../lib/convertion_page.rb:171
+msgid "To"
+msgstr ""
+
+#: ../lib/convertion_page.rb:237
+msgid "Reload"
+msgstr ""
+
+#: ../lib/currency_selector.rb:184
+msgid "Search Currencies"
+msgstr ""
+
+#: ../lib/define.rb:32
+msgid "Afghan Afghani"
+msgstr ""
+
+#: ../lib/define.rb:39
+msgid "Albanian Lek"
+msgstr ""
+
+#: ../lib/define.rb:46
+msgid "Algerian Dinar"
+msgstr ""
+
+#: ../lib/define.rb:53
+msgid "Angolan Kwanza"
+msgstr ""
+
+#: ../lib/define.rb:60
+msgid "Argentine Peso"
+msgstr ""
+
+#: ../lib/define.rb:67
+msgid "Armenian Dram"
+msgstr ""
+
+#: ../lib/define.rb:74
+msgid "Aruban Florin"
+msgstr ""
+
+#: ../lib/define.rb:81
+msgid "Australian Dollar"
+msgstr ""
+
+#: ../lib/define.rb:88
+msgid "Azerbaijani Manat"
+msgstr ""
+
+#: ../lib/define.rb:95
+msgid "Bahamian Dollar"
+msgstr ""
+
+#: ../lib/define.rb:102
+msgid "Bahraini Dinar"
+msgstr ""
+
+#: ../lib/define.rb:109
+msgid "Bajan dollar"
+msgstr ""
+
+#: ../lib/define.rb:116
+msgid "Bangladeshi Taka"
+msgstr ""
+
+#: ../lib/define.rb:123 ../lib/define.rb:130
+msgid "Belarusian Ruble"
+msgstr ""
+
+#: ../lib/define.rb:137
+msgid "Belize Dollar"
+msgstr ""
+
+#: ../lib/define.rb:144
+msgid "Bermudan Dollar"
+msgstr ""
+
+#: ../lib/define.rb:151
+msgid "Bhutan currency"
+msgstr ""
+
+#: ../lib/define.rb:158
+msgid "Bitcoin"
+msgstr ""
+
+#: ../lib/define.rb:165
+msgid "Bitcoin Cash"
+msgstr ""
+
+#: ../lib/define.rb:172
+msgid "Bolivian Boliviano"
+msgstr ""
+
+#: ../lib/define.rb:179
+msgid "Bosnia-Herzegovina Convertible Mark"
+msgstr ""
+
+#: ../lib/define.rb:186
+msgid "Botswanan Pula"
+msgstr ""
+
+#: ../lib/define.rb:193
+msgid "Brazilian Real"
+msgstr ""
+
+#: ../lib/define.rb:200
+msgid "Brunei Dollar"
+msgstr ""
+
+#: ../lib/define.rb:207
+msgid "Bulgarian Lev"
+msgstr ""
+
+#: ../lib/define.rb:214
+msgid "Burundian Franc"
+msgstr ""
+
+#: ../lib/define.rb:221
+msgid "CFP Franc"
+msgstr ""
+
+#: ../lib/define.rb:228
+msgid "Cambodian riel"
+msgstr ""
+
+#: ../lib/define.rb:235
+msgid "Canadian Dollar"
+msgstr ""
+
+#: ../lib/define.rb:242
+msgid "Cape Verdean Escudo"
+msgstr ""
+
+#: ../lib/define.rb:249
+msgid "Cayman Islands Dollar"
+msgstr ""
+
+#: ../lib/define.rb:256
+msgid "Central African CFA franc"
+msgstr ""
+
+#: ../lib/define.rb:263
+msgid "Chilean Peso"
+msgstr ""
+
+#: ../lib/define.rb:270
+msgid "Chilean Unit of Account (UF)"
+msgstr ""
+
+#: ../lib/define.rb:277
+msgid "Chinese Yuan"
+msgstr ""
+
+#: ../lib/define.rb:284
+msgid "Chinese Yuan (offshore)"
+msgstr ""
+
+#: ../lib/define.rb:291
+msgid "Colombian Peso"
+msgstr ""
+
+#: ../lib/define.rb:298
+msgid "Comorian franc"
+msgstr ""
+
+#: ../lib/define.rb:305
+msgid "Congolese Franc"
+msgstr ""
+
+#: ../lib/define.rb:312
+msgid "Costa Rican Colón"
+msgstr ""
+
+#: ../lib/define.rb:319
+msgid "Croatian Kuna"
+msgstr ""
+
+#: ../lib/define.rb:326
+msgid "Cuban Peso"
+msgstr ""
+
+#: ../lib/define.rb:333
+msgid "Czech Koruna"
+msgstr ""
+
+#: ../lib/define.rb:340
+msgid "Danish Krone"
+msgstr ""
+
+#: ../lib/define.rb:347
+msgid "Djiboutian Franc"
+msgstr ""
+
+#: ../lib/define.rb:354
+msgid "Dominican Peso"
+msgstr ""
+
+#: ../lib/define.rb:361
+msgid "East Caribbean Dollar"
+msgstr ""
+
+#: ../lib/define.rb:368
+msgid "Egyptian Pound"
+msgstr ""
+
+#: ../lib/define.rb:375
+msgid "Ether"
+msgstr ""
+
+#: ../lib/define.rb:382
+msgid "Ethiopian Birr"
+msgstr ""
+
+#: ../lib/define.rb:389
+msgid "Euro"
+msgstr ""
+
+#: ../lib/define.rb:396
+msgid "Fijian Dollar"
+msgstr ""
+
+#: ../lib/define.rb:403
+msgid "Gambian dalasi"
+msgstr ""
+
+#: ../lib/define.rb:410
+msgid "Georgian Lari"
+msgstr ""
+
+#: ../lib/define.rb:417 ../lib/define.rb:424
+msgid "Ghanaian Cedi"
+msgstr ""
+
+#: ../lib/define.rb:431
+msgid "Gibraltar Pound"
+msgstr ""
+
+#: ../lib/define.rb:438
+msgid "Guatemalan Quetzal"
+msgstr ""
+
+#: ../lib/define.rb:445
+msgid "Guinean Franc"
+msgstr ""
+
+#: ../lib/define.rb:452
+msgid "Guyanaese Dollar"
+msgstr ""
+
+#: ../lib/define.rb:459
+msgid "Haitian Gourde"
+msgstr ""
+
+#: ../lib/define.rb:466
+msgid "Honduran Lempira"
+msgstr ""
+
+#: ../lib/define.rb:473
+msgid "Hong Kong Dollar"
+msgstr ""
+
+#: ../lib/define.rb:480
+msgid "Hungarian Forint"
+msgstr ""
+
+#: ../lib/define.rb:487
+msgid "Icelandic Króna"
+msgstr ""
+
+#: ../lib/define.rb:494
+msgid "Indian Rupee"
+msgstr ""
+
+#: ../lib/define.rb:501
+msgid "Indonesian Rupiah"
+msgstr ""
+
+#: ../lib/define.rb:508
+msgid "Iranian Rial"
+msgstr ""
+
+#: ../lib/define.rb:515
+msgid "Iraqi Dinar"
+msgstr ""
+
+#: ../lib/define.rb:522
+msgid "Israeli New Shekel"
+msgstr ""
+
+#: ../lib/define.rb:529
+msgid "Jamaican Dollar"
+msgstr ""
+
+#: ../lib/define.rb:536
+msgid "Japanese Yen"
+msgstr ""
+
+#: ../lib/define.rb:543
+msgid "Jordanian Dinar"
+msgstr ""
+
+#: ../lib/define.rb:550
+msgid "Kazakhstani Tenge"
+msgstr ""
+
+#: ../lib/define.rb:557
+msgid "Kenyan Shilling"
+msgstr ""
+
+#: ../lib/define.rb:564
+msgid "Kuwaiti Dinar"
+msgstr ""
+
+#: ../lib/define.rb:571
+msgid "Kyrgyzstani Som"
+msgstr ""
+
+#: ../lib/define.rb:578
+msgid "Laotian Kip"
+msgstr ""
+
+#: ../lib/define.rb:585
+msgid "Lebanese pound"
+msgstr ""
+
+#: ../lib/define.rb:592
+msgid "Lesotho loti"
+msgstr ""
+
+#: ../lib/define.rb:599
+msgid "Liberian Dollar"
+msgstr ""
+
+#: ../lib/define.rb:606
+msgid "Libyan Dinar"
+msgstr ""
+
+#: ../lib/define.rb:613
+msgid "Litecoin"
+msgstr ""
+
+#: ../lib/define.rb:620
+msgid "Macanese Pataca"
+msgstr ""
+
+#: ../lib/define.rb:627
+msgid "Macedonian Denar"
+msgstr ""
+
+#: ../lib/define.rb:634
+msgid "Malagasy Ariary"
+msgstr ""
+
+#: ../lib/define.rb:641
+msgid "Malawian Kwacha"
+msgstr ""
+
+#: ../lib/define.rb:648
+msgid "Malaysian Ringgit"
+msgstr ""
+
+#: ../lib/define.rb:655
+msgid "Maldivian Rufiyaa"
+msgstr ""
+
+#: ../lib/define.rb:662
+msgid "Mauritanian Ouguiya (1973–2017)"
+msgstr ""
+
+#: ../lib/define.rb:669
+msgid "Mauritian Rupee"
+msgstr ""
+
+#: ../lib/define.rb:676
+msgid "Mexican Peso"
+msgstr ""
+
+#: ../lib/define.rb:683
+msgid "Moldovan Leu"
+msgstr ""
+
+#: ../lib/define.rb:690
+msgid "Moroccan Dirham"
+msgstr ""
+
+#: ../lib/define.rb:697 ../lib/define.rb:704
+msgid "Mozambican metical"
+msgstr ""
+
+#: ../lib/define.rb:711
+msgid "Myanmar Kyat"
+msgstr ""
+
+#: ../lib/define.rb:718
+msgid "New Taiwan dollar"
+msgstr ""
+
+#: ../lib/define.rb:725
+msgid "Namibian dollar"
+msgstr ""
+
+#: ../lib/define.rb:732
+msgid "Nepalese Rupee"
+msgstr ""
+
+#: ../lib/define.rb:739
+msgid "Netherlands Antillean Guilder"
+msgstr ""
+
+#: ../lib/define.rb:746
+msgid "New Zealand Dollar"
+msgstr ""
+
+#: ../lib/define.rb:753
+msgid "Nicaraguan Córdoba"
+msgstr ""
+
+#: ../lib/define.rb:760
+msgid "Nigerian Naira"
+msgstr ""
+
+#: ../lib/define.rb:767
+msgid "Norwegian Krone"
+msgstr ""
+
+#: ../lib/define.rb:774
+msgid "Omani Rial"
+msgstr ""
+
+#: ../lib/define.rb:781
+msgid "Pakistani Rupee"
+msgstr ""
+
+#: ../lib/define.rb:788
+msgid "Panamanian Balboa"
+msgstr ""
+
+#: ../lib/define.rb:795
+msgid "Papua New Guinean Kina"
+msgstr ""
+
+#: ../lib/define.rb:802
+msgid "Paraguayan Guarani"
+msgstr ""
+
+#: ../lib/define.rb:809
+msgid "Philippine Piso"
+msgstr ""
+
+#: ../lib/define.rb:816
+msgid "Poland złoty"
+msgstr ""
+
+#: ../lib/define.rb:823
+msgid "Pound sterling"
+msgstr ""
+
+#: ../lib/define.rb:830
+msgid "Qatari Rial"
+msgstr ""
+
+#: ../lib/define.rb:837 ../lib/define.rb:844
+msgid "Romanian Leu"
+msgstr ""
+
+#: ../lib/define.rb:851 ../lib/define.rb:858
+msgid "Russian Ruble"
+msgstr ""
+
+#: ../lib/define.rb:865
+msgid "Rwandan franc"
+msgstr ""
+
+#: ../lib/define.rb:872
+msgid "Salvadoran Colón"
+msgstr ""
+
+#: ../lib/define.rb:879
+msgid "Saudi Riyal"
+msgstr ""
+
+#: ../lib/define.rb:886 ../lib/define.rb:893
+msgid "Serbian Dinar"
+msgstr ""
+
+#: ../lib/define.rb:900
+msgid "Seychellois Rupee"
+msgstr ""
+
+#: ../lib/define.rb:907
+msgid "Sierra Leonean Leone"
+msgstr ""
+
+#: ../lib/define.rb:914
+msgid "Singapore Dollar"
+msgstr ""
+
+#: ../lib/define.rb:921
+msgid "Sol"
+msgstr ""
+
+#: ../lib/define.rb:928
+msgid "Solomon Islands Dollar"
+msgstr ""
+
+#: ../lib/define.rb:935
+msgid "Somali Shilling"
+msgstr ""
+
+#: ../lib/define.rb:942
+msgid "South African Rand"
+msgstr ""
+
+#: ../lib/define.rb:949
+msgid "South Korean won"
+msgstr ""
+
+#: ../lib/define.rb:956
+msgid "Sovereign Bolivar"
+msgstr ""
+
+#: ../lib/define.rb:963
+msgid "Special Drawing Rights"
+msgstr ""
+
+#: ../lib/define.rb:970
+msgid "Sri Lankan Rupee"
+msgstr ""
+
+#: ../lib/define.rb:977 ../lib/define.rb:984
+msgid "Sudanese pound"
+msgstr ""
+
+#: ../lib/define.rb:991
+msgid "Surinamese Dollar"
+msgstr ""
+
+#: ../lib/define.rb:998
+msgid "Swazi Lilangeni"
+msgstr ""
+
+#: ../lib/define.rb:1005
+msgid "Swedish Krona"
+msgstr ""
+
+#: ../lib/define.rb:1012
+msgid "Swiss Franc"
+msgstr ""
+
+#: ../lib/define.rb:1019
+msgid "Tajikistani Somoni"
+msgstr ""
+
+#: ../lib/define.rb:1026
+msgid "Tanzanian Shilling"
+msgstr ""
+
+#: ../lib/define.rb:1033
+msgid "Thai Baht"
+msgstr ""
+
+#: ../lib/define.rb:1040
+msgid "Tongan Paʻanga"
+msgstr ""
+
+#: ../lib/define.rb:1047
+msgid "Trinidad & Tobago Dollar"
+msgstr ""
+
+#: ../lib/define.rb:1054
+msgid "Tunisian Dinar"
+msgstr ""
+
+#: ../lib/define.rb:1061
+msgid "Turkish lira"
+msgstr ""
+
+#: ../lib/define.rb:1068 ../lib/define.rb:1075
+msgid "Turkmenistan manat"
+msgstr ""
+
+#: ../lib/define.rb:1082
+msgid "Ugandan Shilling"
+msgstr ""
+
+#: ../lib/define.rb:1089
+msgid "Ukrainian hryvnia"
+msgstr ""
+
+#: ../lib/define.rb:1096
+msgid "United Arab Emirates Dirham"
+msgstr ""
+
+#: ../lib/define.rb:1103
+msgid "United States Dollar"
+msgstr ""
+
+#: ../lib/define.rb:1110
+msgid "Uruguayan Peso"
+msgstr ""
+
+#: ../lib/define.rb:1117
+msgid "Uzbekistani Som"
+msgstr ""
+
+#: ../lib/define.rb:1124
+msgid "Vietnamese dong"
+msgstr ""
+
+#: ../lib/define.rb:1131
+msgid "West African CFA franc"
+msgstr ""
+
+#: ../lib/define.rb:1138
+msgid "Yemeni Rial"
+msgstr ""
+
+#: ../lib/define.rb:1145
+msgid "Zambian Kwacha"
+msgstr ""
+
+#: ../lib/shell_search_provider.rb:50
+msgid "According to"
+msgstr ""
+
+#: ../lib/shell_search_provider.rb:51
+msgid "Copy"
+msgstr ""
+
+#: ../lib/shell_search_provider.rb:52
+msgid "Copy convertion to clipboard"
+msgstr ""
+
+#: ../lib/shortcuts.rb:29
+msgctxt "shortcuts window"
+msgid "General"
+msgstr ""
+
+#: ../lib/shortcuts.rb:32
+msgctxt "shortcuts window"
+msgid "Keyboard shortcuts"
+msgstr ""
+
+#: ../lib/shortcuts.rb:33
+msgctxt "shortcuts window"
+msgid "Switch currencies"
+msgstr ""
+
+#: ../lib/shortcuts.rb:34
+msgctxt "shortcuts window"
+msgid "Quit"
+msgstr ""
+
+#: ../lib/utils.rb:73 ../lib/window.rb:112
+msgid "ECB"
+msgstr ""
+
+#: ../lib/window.rb:101
+msgid "Main menu"
+msgstr ""
+
+#: ../lib/window.rb:111
+msgid "Providers"
+msgstr ""
+
+#: ../lib/window.rb:118
+msgid "Keyboard shortcuts"
+msgstr ""
+
+#: ../lib/window.rb:119
+msgid "About Valuta"
+msgstr ""
+
+#: ../lib/window.rb:144
+msgid "Source"
+msgstr ""
