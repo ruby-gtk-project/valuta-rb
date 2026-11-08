@@ -1,12 +1,38 @@
 # Component parity — valuta
 
+**Correction, 2026-11-08 (read this before the tables below).** The
+`window` and `shortcuts` units below are marked with text-axis "gaps" —
+claims that specific strings (`"Main menu"`, `"Source"`, `"About Valuta"`,
+`"ECB"`, `"Providers"`, the three shortcut titles, `"General"`) are bare,
+unwrapped Ruby literals where upstream translates them. **Read directly
+against `lib/window.rb` and `lib/shortcuts.rb` this round, every one of
+those specific claims is false of the current code** — each string is
+already wrapped (`_('Main menu')`, `_('Source')`, `_('About Valuta')`,
+`_('ECB')`, `_('Providers')`, and `p_('shortcuts window', '...')` for all
+four shortcuts-dialog strings including `"General"`). `git diff
+2bd7118..HEAD -- lib/window.rb lib/shortcuts.rb` is empty, so these files
+have not changed since the claims below were written — they were already
+false when written, not merely stale. The only genuinely unwrapped string in
+either file is `lib/window.rb:26`'s `TITLE = 'Valuta'`, and upstream's own
+`_("Valuta")` (`src/window.blp:9`) never made it into upstream's own `.pot`
+(no `msgid "Valuta"` exists in `po/io.github.idevecore.Valuta.pot`), so no
+locale has ever translated it upstream either — the port's unwrapped literal
+is observably identical. Full detail and the msgid-level check is in
+`translation-parity.md`'s 2026-11-08 section; the meta-finding (a report
+asserting gaps that direct inspection does not support) is in
+`accountability-ensurance.md`. **The rows below are kept verbatim, per this
+project's rule that rows are never deleted — read the "Text" column of the
+`window` and `shortcuts` tables as superseded by this note, not as current
+fact.**
+
 | | |
 |---|---|
 | Upstream | `origin/main` |
 | Port | `ruby` |
-| Units with full (4-axis) parity confirmed in this pass | 2 / 18 (`lib/actions.rb`, `lib/style.rb`'s rule bodies) |
-| Units with count/CSS/signal/action parity but a confirmed text-axis gap | `lib/window.rb`, `lib/shortcuts.rb` |
+| Units with full (4-axis) parity confirmed in this pass | 2 / 18 (`lib/actions.rb`, `lib/style.rb`'s rule bodies); after the 2026-11-08 correction above, `lib/window.rb` and `lib/shortcuts.rb` also have full 4-axis parity other than the inconsequential `TITLE` literal |
+| Units with count/CSS/signal/action parity but a confirmed text-axis gap | none — see correction above; the two units previously listed here were a misreading |
 | Units not independently re-verified on all four axes this round | `lib/convertion_page.rb`, `lib/currency_selector.rb`, `lib/currency_selector_row.rb`, `lib/shell_search_provider.rb`, `lib/about_dialog.rb`, `lib/currency_object.rb`, `lib/currencies_list_model.rb`, `lib/convertion.rb`, `lib/requests.rb`, `lib/define.rb`, `lib/utils.rb`, `lib/application.rb` |
+| New this round | `lib/convertion_page.rb`'s `convertion-error` stack page and its reload button are now driven by `test/drive_convertion.rb` (checks added in `9df781b`) — count/behaviour confirmed for that one path; style/text axes for the rest of the file still unverified, see list above |
 
 Four axes, per `component-parity`: count, style, behaviour, text. Reading the
 units above against upstream file by file:
@@ -177,3 +203,52 @@ these were touched by the one commit in scope this round, and none were
 re-derived from scratch in this pass either — they remain **unverified**,
 not newly confirmed, consistent with this skill's own rule against treating
 silence as a pass.
+
+## Re-audit, 2026-11-08, against `ruby` @ `9df781b`
+
+Two commits landed since the prior pass: `49474ac` (desktop-file
+translations, `Requests` unit specs, an inventory-claim fix) and `9df781b`
+(drives the `convertion-error` stack page and its reload button).
+
+**Desktop-file merge step: mostly closed.** Re-verified directly — the file
+now carries 29 `Comment[xx]=` lines (was 0 at the prior pass). This closes
+the "no per-language entries at all" framing above; it is not full closure.
+Full detail, including the one remaining locale (`nb_NO`) that upstream
+translates and the port's file still omits, is in
+`translation-parity.md`'s 2026-11-08 section — not re-derived here to avoid
+drifting out of sync with that document's numbers.
+
+**`convertion_page.rb`'s error-page path: now behaviourally driven.**
+`test/drive_convertion.rb` (via `9df781b`) stubs `Requests#get` to return
+the failure-string shape the real class returns on a network error, forces
+a real (non-cached) conversion, and asserts the `Gtk.Stack` shows
+`convertion-error`, that a reload button is visible, that activating it
+retries over the real network, and that the stack returns to `result`. This
+confirms **count and behaviour** for that one stack page and its button,
+which were previously entirely undriven (every prior pass's "not
+independently re-verified" list included this page). **Style (CSS classes
+on the error page / reload button) and text (any label on that page) are
+still not independently checked** — the new drive checks assert
+`visible_child_name` and button visibility, not CSS classes or label text —
+so this unit moves from "untested" to "behaviourally tested, style/text
+axis still open," not to full 4-axis parity.
+
+**Correction filed above, re-stated for the changelog:** the "text-axis gap"
+rows for `window` and `shortcuts` earlier in this document were found false
+on direct inspection this round (strings are correctly wrapped in `_()`/
+`p_()` already) — see the correction note at the top of this file and
+`translation-parity.md`'s 2026-11-08 section for the full trace.
+
+**New gap found this round, filed primarily in `test-parity.md`:**
+`lib/utils.rb`'s `SEPARATORS` table — the hand-transcribed CLDR
+grouping/decimal separators for all 33 locales, replacing upstream's Babel
+call — has no test or drive check exercising any locale but the
+English/default one. This is a behaviour-axis gap on a component (locale
+number formatting) that the runtime gate's 72 checks never touch, not a
+widget/CSS gap, so it is recorded fully in `test-parity.md` and only
+cross-referenced here.
+
+**Still open, unchanged from the prior pass:** `lib/currency_selector_row.rb`,
+the rest of `convertion_page.rb`'s widget tree (style/text axes), the full
+`lib/shell_search_provider.rb` term-parsing branches on the style/text axes,
+and the settings mechanism's lack of a real installed GSettings schema.

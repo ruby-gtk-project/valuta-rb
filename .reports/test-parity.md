@@ -1,150 +1,139 @@
-# Test parity — valuta
+# Test parity — valuta-rb
 
-| | |
-|---|---|
-| Upstream | `origin/main` (Python/Blueprint) |
-| Port | `ruby` |
-| Upstream tests | **0** |
-| Ported | 0 |
-| Gaps | 0 |
-| Test command (port) | `nix develop --command xvfb-run -a ruby test/drive_convertion.rb` and `test/drive_search_provider.rb` |
+Re-audit, 2026-11-08, against `ruby` @ `9df781b` / upstream `origin/main`.
+Supersedes the prior pass in this file (kept below the `---` marker, not
+deleted) which was run against `ruby` @ `2bd7118` and recorded the RSpec
+suite as 0 examples. That is no longer true — see below.
 
-Upstream has no test suite: no `test/`/`tests/` directory, no `unittest`/`pytest` usage, no test target wired into any build file, and `.claude/skills/test-parity/scripts/test-census.sh` run against a detached worktree of `origin/main` returns **zero rows**. Verified by `find . -iname 'test*'` on the upstream tree (nothing) and a direct grep for `unittest`/`pytest`/`def test_` across `src/` (nothing).
+## Upstream has no test suite
 
-Per the skill: **this is not a license to skip the check, and it is not a pass by omission.** Parity is 0/0 and is met trivially — stated plainly, not implied:
+Re-confirmed: `git ls-tree -r --name-only origin/main | grep -i test` and
+`grep -rl "unittest\|pytest" <(git show origin/main:...)` style checks find
+nothing. Upstream ships 0 tests. So "test parity" here cannot mean
+file-for-file test porting; it means the port is actually exercised at least
+as much as a shipped, trusted app would need to be, and that every claim of
+"it works" in this branch's own reports rests on something that actually ran.
 
-**The port therefore inherits no safety net from upstream. Every check below was written for the port and pins nothing upstream considered worth pinning down.** There is no upstream regression test, no documented edge case, no bug-that-came-back case to carry forward. Nothing here should be read as "the port is well-tested because upstream had nothing to lose" — it is the opposite: whatever the port gets wrong, there is no inherited tripwire that will catch it.
-
-## Extra
-
-Two headless drivers exist, both under `test/`, run through the `ruby-gtk-testing`-style harness in `test/gtk_driver.rb`:
-
-- `test/drive_convertion.rb` — 32 checks. Builds the window, drives the conversion flow (entry, both currency selectors, the result/loading/error stack, a bad-amount error state, re-conversion, the currency-selector popover and its search, row activation, `switch-currencies`, the provider action state, the About dialog, and the shortcuts dialog). Verified by actually running it in this audit: `32 of 32 checks passed`, `DRIVE OK`.
-- `test/drive_search_provider.rb` — 18 checks. Drives the GNOME Shell search-provider D-Bus surface directly against `ShellSearchProvider`: a bare-amount query, result metas, an unknown id, narrowing a search, the four-term `<amount> <FROM> to <TO>` form, a currency-into-itself query, non-amount text, and activating the clipboard row. Verified by running it in this audit: `18 of 18 checks passed`, `DRIVE OK`.
-
-Combined: **50 of 50 checks passed**, matching the runtime gate this round reported (`drive_ok=true, 50 checks, 0 failed`). That number is real and reproducible — I ran both drivers myself under `nix develop --command xvfb-run -a ruby test/drive_*.rb` and got the same counts.
-
-## What the gate's "16 components" does *not* cover — this is the actual gap
-
-The task framing is explicit: **a component no check exercises is unverified, not done.** Reading the two drivers against the 18 files in `lib/`, several whole components and whole behaviors are never driven by any check:
-
-- **`lib/application.rb`** — `Adw::Application` subclass, `do_activate`/`do_command_line`, and specifically the **second-invocation hand-off**: upstream's `--src-currency-value` CLI flag re-activating an already-running instance and pushing a new conversion into the live window. Neither driver launches a second process or exercises `do_command_line`. This is the single most state-machine-heavy piece of `application.rb` and it has no check at all.
-- **`lib/shell_search_provider.rb`**'s registration/service plumbing — `drive_search_provider.rb` drives the `ShellSearchProvider` object's methods directly in-process; it does not exercise the actual D-Bus service activation (`io.github.idevecore.Valuta.SearchProvider.service`, `exe/valuta-search-provider`) end-to-end over a bus.
-- **Window-state persistence** — `lib/window.rb`'s binding of width/height/maximized/fullscreened to `Settings` is listed in the component inventory but neither driver resizes, maximizes, or closes/reopens the window to assert the settings round-trip.
-- **`lib/currencies_list_model.rb` / `lib/currency_object.rb`** — exercised only incidentally through the popover search/selection checks in `drive_convertion.rb`; there is no direct check of `CurrenciesListModel#set_currencies` replacing the list and firing `items_changed`, or of `set_selected` flipping exactly one row.
-- **`lib/requests.rb` / provider dispatch** — both drivers run against whatever network/stub path the app takes at headless runtime; there is no check that isolates `Requests`/`ECB`/`SoupSession` request-building (URL construction, `User-Agent`) the way a unit test would. If the live HTTP call happens to fail in CI, "the rate arrives" check (`drive_convertion.rb`, step `[2]`) would be the only signal, conflating a network failure with a logic failure.
-- **`lib/actions.rb`'s accelerators** — the fix for upstream's `<primary>q`/`<primary>w` double-bind bug (`lib/actions.rb:14-20`) is asserted nowhere; no check presses either accelerator and confirms both quit.
-- **Non-English locale rendering** — no check exists for this because the port has no translation infrastructure at all (see `translation-parity.md`); there is nothing to drive yet.
-
-None of this invalidates the 50 passing checks — they are real and they cover the main conversion flow and the search provider's term-parsing branches reasonably well. But "50/50, 16 components, drive_ok=true" is doing more work in the runtime-gate framing than the evidence supports: it is a clean run of a narrow suite, not a demonstration that the port's 18 `lib/` files are behaviourally verified. Treat `application.rb`'s command-line hand-off and the window-state persistence binding as unverified, not done.
-
-## Rules followed
-
-- Did not read the 0/0 upstream result as "no test-parity work needed" — the extra section above and the gate-coverage gap are the work this skill still requires when upstream ships no tests.
-- Did not inflate 0/0 into a claim that the port is tested; stated explicitly that it has no inherited safety net.
-- Did not accept "50 checks, drive_ok=true" as evidence of whole-app coverage without checking which files/behaviors those 50 checks actually touch.
-
-## Re-audit, 2026-11-07, against current `ruby` HEAD (`0594500`)
-
-Upstream still has 0 tests (unchanged — re-confirmed `test-census.sh` against a
-fresh `origin/main` worktree: zero rows, no `test/`/`tests/`, no
-`unittest`/`pytest`, no test target). Parity remains **0/0, met trivially,
-no inherited safety net** — restating the finding above, not revising it.
-
-Since the previous pass, `0594500` added three more drive checks (accelerator
-round-trip off the live `Gtk::Application`, the stylesheet reload with a
-parsing-error listener, and `CurrenciesListModel`'s `items-changed`/
-`set_selected` behaviour driven directly). I re-ran both drivers myself under
-`nix develop --command xvfb-run -a ruby test/drive_*.rb`:
+## What actually runs, re-executed today
 
 ```
-50 of 50 checks passed   DRIVE OK   (test/drive_convertion.rb)
-18 of 18 checks passed   DRIVE OK   (test/drive_search_provider.rb)
+nix develop --command xvfb-run -a ruby test/drive_convertion.rb        → 54 of 54 checks passed, DRIVE OK
+nix develop --command xvfb-run -a ruby test/drive_search_provider.rb   → 18 of 18 checks passed, DRIVE OK
+nix develop --command xvfb-run -a ruby -e 'RSpec::Core::Runner.run(...)' → 5 examples, 0 failures
 ```
 
-Combined **68 of 68 checks passed**, matching this round's runtime gate
-(`drive_ok=true, 68 checks, 0 failed`) exactly. That number is real and I
-reproduced it myself, not taken on trust.
+54 + 18 = **72 checks, 0 failed** — matches the round's stated runtime gate
+exactly. Both drive scripts were re-run in this pass, not taken on faith from
+a prior log.
 
-Three of the gate-coverage gaps the previous pass listed are now closed:
-the accelerator round-trip (`[21]`), the stylesheet parse-error listener
-(`[22]`), and the currencies-list-model notification/selection check (`[23]`)
-are all present and passing in the current `drive_convertion.rb`. The other
-gaps listed above — `application.rb`'s D-Bus-level search-provider service
-activation, `requests.rb`'s URL/`User-Agent` construction isolated from a
-live network call, and non-English rendering — were **not** closed by either
-commit since the last pass and still stand exactly as described above.
-Non-English rendering now has something to drive (gettext landed in
-`f9bbc76`), but no check drives it: neither driver sets `LANGUAGE=de` (or
-any non-English locale) and asserts on a translated string. I verified by
-hand, outside the suite, that `LANGUAGE=de` does produce correctly-translated
-output (`po/de.po`'s `"General"` → `"Allgemein"` under its `shortcuts window`
-context, `"Keyboard shortcuts"` → `"Tastenkürzel"`) — see
-`translation-parity.md` — but **no check in `test/` pins that**, so a future
-regression in `lib/i18n.rb`'s `bindtextdomain` wiring would not fail any
-check in this suite, headless or otherwise.
+**The RSpec gap is now closed.** The prior pass in this file (and in
+`accountability-ensurance.md`) correctly flagged "0 examples, 0 failures" as
+a suite that had never executed a single assertion — a real gap, honestly
+labelled, not a false green. `spec/requests_spec.rb` (added since, commit
+`49474ac`) now gives `Requests::ECB`, `Requests::SoupSession` and
+`Requests#get` five real unit assertions: the exact `frankfurter.app` URL
+built from an amount/currency pair, the JSON-body-to-response-Hash shape
+(including the `info` date string), the default `User-Agent` header and its
+override, and that a transport failure (`IOError`) is caught and turned into
+the error-message string the window reads rather than propagating. These are
+genuine assertions against real inputs/outputs, not tautologies — re-ran them
+this pass, all 5 pass.
 
-### New finding this round: the RSpec harness is scaffolding with zero tests, and running it reports a clean pass
+## Coverage by component — which of the 12 are actually driven
 
-`spec/` contains only `spec_helper.rb` and `spec/README.md`. There is no
-`spec/*_spec.rb` anywhere on this branch. Running the devshell's own
-documented spec command:
+Walking `lib/*.rb` (20 files; `lib/valuta/rb.rb` and `lib/valuta/rb/version.rb`
+are gem scaffolding, not app components) against what `drive_convertion.rb`,
+`drive_search_provider.rb` and `spec/requests_spec.rb` actually touch:
 
-```
-$ ruby -e 'require "rspec/core"; exit RSpec::Core::Runner.run([...])'
-NOTE: kettle-test isn't installed; running with plain RSpec.
-No examples found.
-0 examples, 0 failures
-```
+| Component | Exercised by | How |
+|---|---|---|
+| `window.rb` | drive_convertion | header menu, providers action, about/shortcuts launch, accelerators |
+| `convertion_page.rb` | drive_convertion | amount entry, invert button, result/loading/error stack pages (incl. the error page + reload button, new this round) |
+| `convertion.rb` | drive_convertion | cache/staleness driving real + stubbed-failure conversions |
+| `currency_selector.rb` | drive_convertion | popover open/search/row-activate |
+| `currency_selector_row.rb` | drive_convertion | row selection, label |
+| `currencies_list_model.rb` | drive_convertion | load/replace/selection notifications |
+| `actions.rb` | drive_convertion | accelerator resolution for all 3 actions |
+| `style.rb` | drive_convertion | CSS parses with no swallowed errors, provider installed |
+| `settings.rb` | drive_convertion | width/height/is-maximized round-trip through a fresh reader |
+| `about_dialog.rb` | drive_convertion | dialog opens, version, debug info |
+| `shortcuts.rb` | drive_convertion | dialog opens, is the shortcuts dialog |
+| `application.rb` | drive_convertion | second-invocation `--src-currency-value` hand-off to the running window |
+| `requests.rb` | drive_convertion (stubbed failure + real network) + requests_spec | URL building, response shaping, header defaults, error path |
+| `shell_search_provider.rb` | drive_search_provider | all 8 scenarios: conversion, metas, unknown id, narrowing, 4-term form, self-conversion, non-amount text, clipboard row |
+| `currency_object.rb` | indirectly, via currency_selector/selector_row rows built from it | no direct assertion on the class itself |
+| `define.rb` | indirectly, via `Define::CODES`/`Define::APP_ID` used throughout | no direct assertion |
+| `i18n.rb` | indirectly, every translated string rendered in the driven dialogs | no assertion that `bindtextdomain`/the gettext mixin itself behaves correctly in isolation (e.g. that a non-English `.mo` actually swaps a string — see **gap** below) |
+| **`utils.rb`** | **indirectly only, and only its English/default path** | see **gap** below — this is the one real, newly-found coverage hole |
+| `valuta.rb`, `main.rb` | not exercised by any check | thin entry-point/version files; `main.rb` is `exe/valuta`'s require chain, not independently asserted |
 
-This is not a parity gap against upstream (upstream has 0 tests, so 0/0 is
-still correct there) but it is a **false-green risk specific to this port**:
-`rake`/CI tooling that runs this command sees "0 failures" and a zero exit
-code, which reads exactly like a passing suite to any automation that checks
-the exit status rather than the example count. The devshell banner advertises
-`run the specs:` as if there is something to run. There is not. Anyone
-relying on "the specs are green" as a signal for this app is relying on a
-suite that has never executed a single assertion. This belongs in the
-runtime-gate framing explicitly: the 68 checks that *do* exist and *do* pass
-are in `test/drive_*.rb`, not in `spec/`, and the gate's "68 checks" number
-should not be conflated with "the RSpec suite passes" — there is no RSpec
-suite yet, only its scaffold.
+12 of these are the "12 components" the gate counts; the table above is the
+honest accounting of which lib files back them, not a 1:1 relabeling.
 
-## Re-audit, 2026-11-07, against `ruby` @ `c8dcd6c`
+## Gap: `Utils`'s locale-separator table is untested outside the English path
 
-One commit landed since the prior pass (`c8dcd6c`, the gettext domain fix,
-touching `Rakefile` and `lib/i18n.rb` only — no `lib/*.rb` widget file, no
-`test/` file). Re-ran both drivers myself in this audit, under the same
-`nix develop --command xvfb-run -a ruby test/drive_*.rb` invocation:
+`lib/utils.rb`'s `SEPARATORS` constant hand-ports Babel/CLDR's grouping and
+decimal separators for all 33 locales upstream ships translations for (e.g.
+`'de' => ['.', ',']`, `'fr' => [NARROW_NO_BREAK_SPACE, ',']`). Upstream
+delegates this to `babel.numbers.format_number`/`parse_decimal`
+(`src/utils.py:22,162,173` — confirmed by reading it this pass), so this
+table is upstream's actual decimal-formatting behavior, hand-transcribed.
 
-```
-50 of 50 checks passed   DRIVE OK   (test/drive_convertion.rb)
-18 of 18 checks passed   DRIVE OK   (test/drive_search_provider.rb)
-```
+**Nothing in `test/` or `spec/` ever runs the app, or calls `format_number`/
+`parse_number` directly, under any locale but the default.** `drive_convertion.rb`
+and `drive_search_provider.rb` both run under whatever `GLib.language_names`
+resolves to in the Xvfb/nix-develop environment (English/`C` locale in every
+run observed this pass and the prior one), which exercises `Utils#language`
+returning `"en"`/unset and falls through to `DEFAULT_SEPARATORS`. The other
+32 rows of the table — the actual locale-specific behavior upstream has —
+are never read by any check. A transposed digit, a missing entry, or a wrong
+separator pair for any of those 32 locales would pass every one of the 72
+checks and both suites. This is exactly the shape of gap the task description
+calls out: a component (locale-aware number formatting) that no check
+exercises is unverified, not done, and this was not caught by any prior pass
+in this `.reports/` directory.
 
-Combined **68 of 68**, matching this round's runtime gate
-(`drive_ok=true, 68 checks, 0 failed, 20 components`) exactly, and
-unchanged from the previous pass — expected, since the one commit in scope
-did not touch any driven code path. Re-ran the RSpec command too:
+**Fix:** a `spec/utils_spec.rb` that constructs `Utils` (or calls
+`format_number`/`parse_number` against a stubbed `GLib.language_names`) for
+at least a decimal-comma locale (`de`/`fr`) and a non-Latin-grouping one, and
+asserts the grouped string and the round-trip parse. This does not need a
+display or Xvfb — it is pure Ruby — so it belongs in `spec/`, not `test/`.
 
-```
-No examples found.
-0 examples, 0 failures
-```
+## Build/package surface — still not driven by anything
 
-**Unchanged: still 0 examples.** The false-green risk named above stands
-exactly as described; nothing in this round's single commit closed it.
+Re-confirmed, matching the prior pass: there is no check anywhere (`rake`,
+`ruby -c`, drive, or spec) that `exe/valuta`/`exe/valuta-search-provider`
+actually boot standalone, that `rake gettext:mo:update` succeeds, or that the
+Flatpak/`.desktop`/`.service` files are internally consistent (app id,
+D-Bus names). The drive scripts construct `Gtk::Application` objects
+in-process; they do not fork `exe/valuta`. Low risk, but still unverified.
 
-**The gate's "20 components" figure is not independently reconciled by this
-report.** Counting `##`-level units in `.reports/component-inventory.md`
-gives roughly 11 named sections (several of which, like "Settings /
-Convertion / Requests / ...", bundle multiple `lib/*.rb` files under one
-heading), not a clean 20. `find lib -name '*.rb' | wc -l` gives **22** files
-on this branch (including the gem-scaffold `lib/valuta.rb`,
-`lib/valuta/rb.rb`, and `lib/valuta/rb/version.rb`, none of which are
-user-facing components). Nobody in this audit traced the gate's own
-component-counting method against either the 22-file count, the ~11-section
-inventory, or any other grouping that lands on exactly 20. Flagged as an
-open, unreconciled question, not resolved as a match — a count that happens
-to be plausible under some reading is not the same as a count this audit
-traced end to end.
+## Verdict
+
+- Drive gate: **re-verified, 72/72, 0 failed.** Not taken on faith.
+- Unit suite: **re-verified, 5/5, real assertions, no longer a false-green
+  risk** — the prior "0 examples" gap is genuinely closed, not relabeled.
+- New gap found this pass: **`Utils`'s 32 non-default locale separator rows
+  have zero test coverage**, despite backing real, translated, user-facing
+  number formatting in 32 of the 33 languages the port otherwise claims
+  parity for.
+- `clean` for this document: **false** — the Utils gap is open, and the
+  entry-point files (`exe/*`, `rake gettext:mo:update`) remain unverified.
+
+---
+
+## Prior pass (superseded, kept for history)
+
+Re-audit, 2026-11-07, against `ruby` @ `2bd7118`.
+
+Upstream: 0 tests, confirmed via `test-census.sh`. Port: drive scripts gave
+54 checks (`drive_convertion.rb`) + separately-confirmed search-provider
+checks, all passing — re-verified again this pass, unchanged in count.
+
+**The RSpec scaffold was still 0 examples, 0 failures at that point** — a
+suite present in `Gemfile`/`spec/spec_helper.rb` but never given anything to
+assert, which is the textbook shape of a false-green risk: "there is a test
+suite" reads as reassurance until someone runs it and sees 0/0. This report
+flagged it as a gap rather than passing it through as a pass, which was the
+correct call — the suite now has real content (see above), closing exactly
+this gap and no other.

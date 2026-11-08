@@ -183,3 +183,34 @@ would have caught had the inventory rewrite itself been read against
 
 No new unit was added, removed, or reclassified widget-vs-non-widget this
 round. The partial-coverage caveats from both prior passes stand unchanged.
+
+## Re-audit, 2026-11-08, against `ruby` @ `9df781b`
+
+Two commits landed since the prior pass: `49474ac` (desktop-file
+translations, `Requests` unit specs, an inventory-claim fix — no `lib/`
+widget change) and `9df781b` (adds a stubbed-failure path and reload-button
+click to `test/drive_convertion.rb`, driving `convertion_page.rb`'s
+pre-existing `convertion-error` stack page — a widget that was already
+identified and counted in this document's `convertion_page.rb` section as
+one of the `Gtk.Stack`'s three pages; it is not a new widget, only a newly
+*driven* one). No widget type, CSS class, or signal was added, removed, or
+reclassified in any unit this round, so the identification tables are
+unchanged.
+
+**One correction to this document's own track record, not a new finding
+here:** `component-parity.md` and `translation-parity.md` both record, as
+of this round, that several text-axis "gap" claims against `lib/window.rb`
+and `lib/shortcuts.rb` in `component-parity.md` were false on direct
+re-inspection (the strings were already correctly wrapped in `_()`/`p_()`).
+This document's own widget tables for those two units were not themselves
+wrong — they correctly listed the widgets, CSS and signals — so no
+correction is needed here; noted only so a reader of this file does not
+assume the sibling document's text-axis column, where it disagrees, is the
+accurate one without checking.
+
+The partial-coverage caveats from all three prior passes stand unchanged:
+`lib/currency_selector_row.rb` and the full `convertion_page.rb` widget tree
+remain unverified on the CSS/signal axes in this document specifically
+(behavioural coverage of one of `convertion_page.rb`'s stack pages improved
+this round — see `component-parity.md` and `test-parity.md` — but that is a
+behaviour-axis finding, not a widget-identification one).

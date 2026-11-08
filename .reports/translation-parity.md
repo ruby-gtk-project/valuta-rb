@@ -7,6 +7,124 @@ re-audit run 2026-11-07 against current `ruby` HEAD (`0594500`), after
 substantially. The current state is reported first; the original pass is
 kept below, unedited, because rows are never deleted.
 
+## Re-audit, 2026-11-08, against `ruby` @ `9df781b`
+
+One translation-relevant commit landed since the last re-audit below
+(`49474ac`, "Merge desktop-file translations, add Requests unit specs, fix
+inventory claim"), touching
+`data/applications/io.github.idevecore.Valuta.desktop`.
+
+**Desktop-file localization: mostly closed, one real gap remains.** The
+2026-11-07 re-audit below recorded this file as having *zero*
+`Comment[xx]=` entries. Re-checked today — that is no longer true:
+
+```
+$ grep -c '^Comment\[' data/applications/io.github.idevecore.Valuta.desktop
+29
+```
+
+29 of the 33 `po/LINGUAS` locales now have a `Comment[xx]=` line, each
+checked against its `.po`'s `msgstr` for `msgid "Convert between currencies"`
+and matching. `Name=Valuta` correctly carries **no** `Name[xx]=` lines in
+either upstream or the port — confirmed by grepping `po/POTFILES`/the `.pot`:
+`Name=` is not one of upstream's translatable desktop-file strings (only
+`Comment=` is, at `desktop.in.in:6`), so the port not inventing `Name[xx]=`
+entries is correct, not a gap.
+
+The remaining 4 locales — `sv`, `ia`, `ka`, `ro` — are correctly absent: each
+has an empty `msgstr ""` for this exact msgid in upstream's own `.po` (i.e.
+upstream ships no translation for this string in those languages either;
+confirmed by reading `po/sv.po`, `po/ia.po`, `po/ka.po`, `po/ro.po` from
+`origin/main` directly). Omitting them matches upstream's actual shipped
+behavior.
+
+**`nb_NO` is a real, narrow gap.** `po/nb_NO.po` has a *non-empty* `msgstr`
+for `msgid "Convert between currencies"` (`"Kunne ikke hente valutadata"` —
+oddly, this reads as "Could not retrieve currency data" rather than an
+actual translation of "Convert between currencies"; that mistranslation is
+upstream's own `.po` content, not something to fix in the port) but the
+port's desktop file has no `Comment[nb_NO]=` line at all. A Norwegian
+(Bokmål) user gets the English `Comment=` where upstream's build would have
+given them that (admittedly wrong) Norwegian string. This is the one
+concrete, actionable translation-parity gap left: add
+`Comment[nb_NO]=Kunne ikke hente valutadata` to
+`data/applications/io.github.idevecore.Valuta.desktop`.
+
+**Msgid coverage re-walked end to end.** Extracted every `msgid` from
+upstream's committed `po/io.github.idevecore.Valuta.pot` (175 non-header
+entries) and every `_()`/`N_()`/`p_()`/`P_()`-style call in `lib/` by hand
+(not just grep, to account for `p_`/`C_`-style context calls a bare `_(`
+regex misses). Three apparent "misses" on a first pass turned out to be
+false positives once the actual call sites were read:
+
+- `"Google (unstable)"`, `"Moeda.info"`, and `"Unable to convert currency,
+  failed to fetch results from Google."` are upstream `.pot` leftovers from
+  a removed feature — `src/requests.py`'s own `providers = {0: ECB}` dict
+  (re-read directly from `origin/main` this pass) only ever registers ECB,
+  and `data/metainfo/...xml.in`'s own 1.4.2 release notes say "Moeda.info
+  removed." The port correctly implements only ECB and correctly has no
+  string for providers that no longer exist in either tree.
+- `"Search"` (referenced by the `.pot` at `index.blp:19`) no longer exists
+  in upstream's *current* `index.blp` at all — the `.pot` is stale relative
+  to upstream's own source (confirmed: no `_("Search")` literal anywhere in
+  `origin/main`'s `src/components/currency_selector/index.blp` today). This
+  is an upstream packaging staleness issue, not a port gap: there is nothing
+  live to translate.
+- `"General"`, `"Switch currencies"`, `"Quit"` are present and correctly
+  wrapped — `lib/shortcuts.rb:29-34` uses `p_('shortcuts window', 'General')`
+  etc., matching upstream's `C_("shortcuts window", ...)` context exactly.
+  A naive `grep "_('"` misses these because the marker is `p_`, not `_`; this
+  is noted explicitly so the next audit doesn't re-report it as a gap (see
+  **correction to `component-parity.md`** below).
+
+So, msgid coverage: **no additional gap found beyond the already-known
+`nb_NO` desktop-file line.** The 175-upstream/184-ported counts from the
+2026-11-07 pass stand (the small count difference is the currency-name
+dict's dynamic re-lookup, already hand-censused there, not a new issue).
+
+### Correction to a claim in `component-parity.md`
+
+That document's current text asserts text-axis gaps in `window.rb` and
+`shortcuts.rb` — e.g. "`_("Main menu")` vs bare `'Main menu'`" — claiming the
+port left several strings unwrapped. **Read directly against `lib/window.rb`
+and `lib/shortcuts.rb` this pass, every one of those specific claims is
+false of the current code:**
+
+```
+lib/window.rb:101:   button.tooltip_text = _('Main menu')
+lib/window.rb:111:   _('Providers'),
+lib/window.rb:112:   section.append(_('ECB'), 'window.providers::ecb')
+lib/window.rb:119:   section.append(_('About Valuta'), 'app.about')
+lib/window.rb:144:   button.tooltip_text = _('Source')
+lib/shortcuts.rb:29:  GROUP_TITLE = p_('shortcuts window', 'General')
+lib/shortcuts.rb:32-34: p_('shortcuts window', 'Keyboard shortcuts'|'Switch currencies'|'Quit')
+```
+
+`git diff 2bd7118..HEAD -- lib/window.rb lib/shortcuts.rb` is empty — these
+files have not changed since `component-parity.md`'s claims were written, so
+the claims were already false when written, not merely stale. The one real,
+narrow miss in this unit is `lib/window.rb:26`'s `TITLE = 'Valuta'`, which is
+genuinely unwrapped — but upstream's own `_("Valuta")`
+(`src/window.blp:9`) **never made it into upstream's own `.pot`** (confirmed:
+no `msgid "Valuta"` anywhere in `po/io.github.idevecore.Valuta.pot`), so no
+`.po` file has ever translated it either. The port's unwrapped literal
+produces the exact same observable string, in every language, as upstream's
+nominally-wrapped-but-never-extracted one. Not a user-visible gap. This
+correction is filed here, in `translation-parity.md`, because it is the text
+axis the claim is about; `accountability-ensurance.md` carries the
+meta-finding that the claim was wrong in the first place.
+
+### Verdict, 2026-11-08
+
+- Desktop-file `Comment[xx]=`: **29/33, correctly so for 29 and for the 4
+  deliberately-empty-upstream ones; `nb_NO` is the one real remaining gap.**
+- Msgid coverage: **no new gap; three apparent misses resolved as false
+  positives (dead code, stale upstream `.pot`, missed `p_()` call sites).**
+- `component-parity.md`'s window/shortcuts text-gap claims: **false,
+  corrected here and in `accountability-ensurance.md`.**
+- `clean` for this document: **false** — `nb_NO` is open, and the
+  domain/desktop-build-mechanism history below still applies.
+
 ## Re-audit, 2026-11-07
 
 | | |

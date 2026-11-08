@@ -266,3 +266,126 @@ own numbers and against the actual `po/` directory, all three on the same
 branch, none of them agreeing with each other until this pass reconciled
 them. That reconciliation — not a grep, not a drive script — is this
 skill's actual job this round.
+
+## Re-audit, 2026-11-08, against `ruby` @ `9df781b`
+
+### The RSpec gap from every prior pass in this file is now genuinely closed
+
+Every pass above, correctly, named "0 examples, 0 failures" as a false-green
+risk rather than a pass. Re-ran it this round:
+
+```
+nix develop --command xvfb-run -a ruby -e 'RSpec::Core::Runner.run(...)'
+→ 5 examples, 0 failures
+```
+
+`spec/requests_spec.rb` (added in `49474ac`) gives `Requests::ECB`,
+`Requests::SoupSession` and `Requests#get` real assertions against concrete
+inputs/outputs (the exact URL string, the exact response Hash, header
+merging, an `IOError` turned into the caller-facing error string) — not
+tautologies, not `expect(true).to eq(true)`. This is the correct way to
+close the exact gap the prior passes named: by giving the suite content,
+not by deleting the "0 examples" sentence and claiming victory. Recorded
+here, in the affirmative, because this document's own rule is to call out a
+false green — and the honest complement of that rule is to say clearly when
+a previously-named real gap is actually closed, so the ledger doesn't read
+as permanently pessimistic regardless of what changes.
+
+### A new instance of the same failure mode the prior pass found — reversed in direction
+
+The prior pass above found `component-inventory.md` making a **false claim
+of a gap that didn't exist** ("no `po/` directory... no translation-parity
+work has been done yet", written after both were already false). This round
+finds the same failure mode, in the same direction, in a different
+document: **`component-parity.md`'s current text asserts text-axis gaps in
+`lib/window.rb` and `lib/shortcuts.rb`** — "`_("Main menu")` vs bare
+`'Main menu'`", "`_("About Valuta")` vs `'About Valuta'`", the three
+`C_("shortcuts window", ...)` shortcut titles, etc. — **that direct
+inspection of those exact files, this round, shows to be false**:
+
+```
+lib/window.rb:101:   button.tooltip_text = _('Main menu')
+lib/window.rb:111-112: _('Providers'), ... _('ECB')
+lib/window.rb:119:   section.append(_('About Valuta'), 'app.about')
+lib/window.rb:144:   button.tooltip_text = _('Source')
+lib/shortcuts.rb:29:  GROUP_TITLE = p_('shortcuts window', 'General')
+lib/shortcuts.rb:32-34: p_('shortcuts window', '...') × 3
+```
+
+`git diff 2bd7118..HEAD -- lib/window.rb lib/shortcuts.rb` is empty: these
+files have not changed since `component-parity.md`'s claims were written
+(in the pass leading to `2bd7118`), which means **the claims were already
+false at the moment they were committed**, not stale relative to later
+work — the same shape as the `component-inventory.md` finding above, and
+the same root cause: a claim about a file's content that was written
+without the file being read carefully enough, or was written against a
+`grep "_('"` style check that misses the `p_(` / multi-line-call shapes
+these specific strings use. (A plain `_(` grep finds `_('Main menu')` just
+fine — so even that account does not fully explain it; the most likely
+explanation is the claim was written from memory/assumption about what
+*would* need fixing, rather than from the file as it stood.)
+
+**This is the lower-severity direction (false red, not false green) — a
+report that says more is broken than actually is, rather than one that says
+everything works when it doesn't — but it is the identical failure
+category this skill exists to catch: a report making a specific, falsifiable
+claim about code that a one-command check would have caught before
+publishing.** Left uncorrected, it would cause a future agent to "fix"
+already-correct, already-wrapped strings, or to distrust
+`translation-parity.md`'s 184/185 count sitting one file over — exactly the
+downstream harm the `component-inventory.md` finding above describes, mirrored.
+
+Corrected in `component-parity.md` (a note at the top of that file) and in
+`translation-parity.md` (the full msgid-level trace). Not corrected by
+deleting the false rows — per this project's own rule, rows are kept and
+marked superseded, not rewritten out of the history.
+
+### Fresh grep, this round — unchanged
+
+```
+grep -rniE "TODO|FIXME|not implemented|for now|in a future|stub out|placeholder|unimplemented" lib/ exe/
+```
+
+Same three hits as every prior pass, all previously adjudicated as benign
+(`PLACEHOLDER` constant naming a real ellipsis string, `placeholder_text=`
+GTK API calls, and `lib/valuta/rb.rb:11`'s "for now" explaining a real,
+documented design choice, not excusing missing work). `PORTING.md` still
+does not exist anywhere on `ruby`. No new excuse-vocabulary hit introduced
+by either commit landed this round.
+
+### Runtime gate — reproduced independently, not taken on the round's word
+
+```
+test/drive_convertion.rb       → 54 of 54 checks passed, DRIVE OK
+test/drive_search_provider.rb  → 18 of 18 checks passed, DRIVE OK
+```
+
+54 + 18 = 72, 0 failed — matches this round's stated gate exactly, and was
+re-run from a clean invocation in this audit rather than read off a log.
+
+### New gap this round, named plainly rather than folded into a "pass"
+
+`lib/utils.rb`'s 33-locale `SEPARATORS` table — real, user-facing,
+translated-number-formatting logic, hand-ported from upstream's Babel call
+— has zero test or drive coverage for any locale but the English default.
+72/72 green and 5/5 green both say nothing about this table, because
+nothing in either suite ever runs under a non-default `GLib.language_names`.
+This is recorded in full in `test-parity.md` and `component-parity.md`;
+named here too because a green runtime gate being silent about a real,
+untested surface is exactly the "component no check exercises is
+unverified, not done" pattern this round's brief calls out by name, and it
+would be a false-green risk the moment anyone summarized "72/72, 5/5" as
+"fully tested" without this caveat attached.
+
+### Verdict
+
+`clean: false`. Three things are open: the `nb_NO` desktop-file line
+(`translation-parity.md`), the `Utils` locale-formatting test gap
+(`test-parity.md`), and the GSettings-schema-registration mechanism gap
+(`component-parity.md`, unchanged for several rounds). None of them are
+hidden behind excuse language; all three are named as open, with a concrete
+fix, in the documents that own them. The one thing this pass had to spend
+most of its effort on was not finding new missing work in `lib/` — there is
+very little left — but correcting two reports' own false claims (one false
+green, found previously; one false-gap, found this round) so that the next
+reader of `.reports/` trusts what it says.
