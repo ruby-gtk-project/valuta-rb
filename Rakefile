@@ -205,6 +205,53 @@ rescue LoadError
   end
 end
 
+### DESKTOP FILE LOCALIZATION
+# Upstream merges po/*.po translations of data/io.github.idevecore.Valuta.desktop.in.in's
+# msgids into the shipped .desktop file at package time via meson's
+# i18n.merge_file (a wrapper over `msgfmt --desktop`). This port has no meson,
+# so this task is the equivalent hand build step: it reads each po/<lang>.po,
+# looks up the translated "Comment" msgid ("Convert between currencies", the
+# only translatable key — "Name"/"GenericName" are the brand name "Valuta"
+# and have no po entry upstream either), and merges Comment[<lang>]= lines
+# into data/applications/io.github.idevecore.Valuta.desktop, right after the
+# untranslated Comment= line, the same place `msgfmt --desktop` puts them.
+DESKTOP_FILE_PATH = "data/applications/io.github.idevecore.Valuta.desktop"
+DESKTOP_TRANSLATABLE_MSGID = "Convert between currencies"
+
+begin
+  require "gettext/po_parser"
+  require "gettext/po"
+
+  desc "Merge po/*.po translations into #{DESKTOP_FILE_PATH} (Comment[xx]=), like upstream's i18n.merge_file"
+  task "desktop:merge_translations" do
+    translations = File.read("po/LINGUAS").split.filter_map do |locale|
+      po_path = "po/#{locale}.po"
+      next unless File.exist?(po_path)
+
+      parser = GetText::POParser.new
+      parser.ignore_fuzzy = true
+      catalog = parser.parse_file(po_path, GetText::PO.new)
+      entry = catalog[DESKTOP_TRANSLATABLE_MSGID]
+      msgstr = entry&.msgstr
+      [locale, msgstr] if msgstr && !msgstr.empty?
+    end.to_h
+
+    lines = File.readlines(DESKTOP_FILE_PATH, chomp: true).reject { |line| line.start_with?("Comment[") }
+    comment_index = lines.index { |line| line.start_with?("Comment=") }
+    raise "no Comment= line found in #{DESKTOP_FILE_PATH}" unless comment_index
+
+    localized_lines = translations.sort.map { |locale, msgstr| "Comment[#{locale}]=#{msgstr}" }
+    lines.insert(comment_index + 1, *localized_lines)
+    File.write(DESKTOP_FILE_PATH, lines.join("\n") + "\n")
+    puts "Merged #{translations.size} Comment[xx]= translations into #{DESKTOP_FILE_PATH}"
+  end
+rescue LoadError
+  desc("(stub) desktop:merge_translations is unavailable")
+  task("desktop:merge_translations") do
+    warn("NOTE: the gettext gem isn't installed in the current environment")
+  end
+end
+
 ### RELEASE TASKS
 # Setup stone_checksums
 begin

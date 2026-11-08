@@ -35,9 +35,9 @@ Overall result: **every upstream file that contributes a component already
 has a corresponding `lib/*.rb` on `ruby`, and every one of them carries a
 "Ported from upstream's ..." header naming its source.** This is a mature
 port, not a fresh scaffold — the table below is a parity check, not a to-do
-list. The one open item is translations (`po/*.po`), which have no `lib/`
-analogue and are out of scope for `component-identification`; see the
-Notes section.
+list. Translations (`po/*.po`) are already present and wired on this branch
+(see the Notes section and `.reports/translation-parity.md`, which this
+report cross-references rather than restates).
 
 ## Window — the application window
 
@@ -206,13 +206,14 @@ invert_currencies).
   `Soup::Session`/`Soup::Message` on the live HTTP path (the ECB rate fetch).
   The gemspec declares `spec.add_dependency("soup3")`. Nothing in `lib/`
   hand-rolls an HTTP client in its place. This wiring was not regressed.
-- **Translations (`po/*.po`, 33 locales + the `.pot`).** Upstream has a full
-  `po/` catalogue; the port's `lib/i18n.rb` binds the same gettext domain
-  (`valuta`) so the existing `.mo` catalogues apply unchanged once installed,
-  but the `ruby` branch carries no `po/` directory of its own and no
-  `translation-parity` work has been done yet. That is this skill's sibling
-  skill's job, not this inventory's, and is flagged here only so it is not
-  lost.
+- **Translations (`po/*.po`, 33 locales + the `.pot`).** The `ruby` branch
+  already carries its own `po/` directory (all 33 upstream locales plus the
+  `.pot`), and `lib/i18n.rb` binds the gettext domain to `valuta` — matching
+  upstream's own domain (fixed in commit `c8dcd6c`, after an earlier mismatch
+  against the app id). `.reports/translation-parity.md` documents 184/185
+  messages ported and the domain fix independently verified (rebuilt `.mo`
+  files, `LANGUAGE=de` renders translated strings). This inventory does not
+  restate that work further; see that report for the authoritative state.
 - **No gap found.** Every upstream file that owns a component already has a
   corresponding, correctly-attributed `lib/*.rb`. This survey found no
   missing component to scaffold. If a later pass finds a behavioural gap
