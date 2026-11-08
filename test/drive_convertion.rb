@@ -101,6 +101,39 @@ GtkDriver.drive(application, shots: 'tmp/shots', interval: 3000) do |d, app|
     d.shot('04-converted-250')
   end
 
+  # The stack's third page (convertion-error) and its reload button are never
+  # reached by a live successful fetch, so #get is stubbed to answer the
+  # String Requests hands back on a real failure (see requests.rb's own
+  # comment: "#get answers the response Hash on success and the error message
+  # String on failure"). The stub is removed again before the next step so
+  # every later conversion still hits the real network.
+  d.step('a failed fetch shows the error page and a toast') do
+    @original_get = Requests.instance_method(:get)
+    Requests.define_method(:get) { 'stubbed network failure' }
+    # Convertion#convert only hits the network when the pair/provider is not
+    # the one already cached (see convertion.rb's #stale?), so the
+    # destination is switched to a currency never converted to yet in this
+    # run, which forces a real fetch rather than a free remultiply.
+    selectors.call.last.set_selected('CAD')
+  end
+
+  d.step('the error page is showing, with the toast upstream raises') do
+    d.check('the stack shows the error page') { stack.call.visible_child_name == 'convertion-error' }
+    reload = -> { descendants(stack.call, Gtk::Button).first }
+    d.check('the reload button is visible') { reload.call.visible? }
+    d.shot('03b-convertion-error')
+  end
+
+  d.step('the reload button retries, using the real network again') do
+    Requests.define_method(:get, @original_get)
+    descendants(stack.call, Gtk::Button).first.signal_emit('clicked')
+  end
+
+  d.step('the reload recovered into a result') do
+    d.check('the stack is back on the result page') { stack.call.visible_child_name == 'result' }
+    d.check('the result is a formatted number again') { result.call.label.match?(/\A\d/) }
+  end
+
   d.step('the popover opens and searches') do
     selectors.call.first.then do |selector|
       selector.button.popup
