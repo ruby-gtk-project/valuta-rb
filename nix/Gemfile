@@ -8,8 +8,8 @@
 # a packaged app's closure.
 source "https://rubygems.org"
 
-gem "glib2"
 gem "adwaita"
+gem "gettext"
+gem "glib2"
 gem "gtk4"
 gem "soup3"
-gem "gettext"
